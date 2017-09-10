@@ -58,7 +58,7 @@ func (s *Stats) CalculateAverages(timeTable *TimeTable) {
 		requestsSumOneSec += val
 	}
 
-	for _, val := range timeTable.ResponseInOneSec {
+	for _, val := range timeTable.ResponsesInOneSec {
 		responsesSumOneSec += val
 	}
 

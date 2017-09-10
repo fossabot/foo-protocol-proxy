@@ -7,34 +7,35 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 )
 
 type (
 	Proxy struct {
-		config    config.Configuration
-		dataChan  chan *DataBus
-		status    chan os.Signal
-		stats     *Stats
-		ticker    *time.Ticker
-		timeTable *TimeTable
+		config       config.Configuration
+		dataChan     chan *DataBus
+		status       chan os.Signal
+		stats        *Stats
+		milliTicker  *time.Ticker
+		oneSecTicker *time.Ticker
+		timeTable    *TimeTable
 	}
 )
 
 func NewProxy(config config.Configuration) *Proxy {
 	return &Proxy{
-		config:   config,
-		dataChan: make(chan *DataBus),
-		status:   make(chan os.Signal, 1),
-		stats:    new(Stats),
-		ticker:   time.NewTicker(time.Millisecond),
+		config:       config,
+		dataChan:     make(chan *DataBus),
+		status:       make(chan os.Signal, 1),
+		stats:        new(Stats),
+		milliTicker:  time.NewTicker(time.Millisecond),
+		oneSecTicker: time.NewTicker(time.Second),
 		timeTable: &TimeTable{
 			RequestsInOneSec:  [1000]uint64{},
-			ResponseInOneSec:  [1000]uint64{},
-			RequestsInTenSec:  [10000]uint64{},
-			ResponsesInTenSec: [10000]uint64{},
+			ResponsesInOneSec: [1000]uint64{},
+			RequestsInTenSec:  [10]uint64{},
+			ResponsesInTenSec: [10]uint64{},
 		},
 	}
 }
@@ -48,7 +49,7 @@ func (p *Proxy) Start() {
 		os.Exit(1)
 	}
 
-	log.Printf("Listening on %s, PID=%d", config.Listening, os.Getpid())
+	log.Printf("Forwarding from %s to %s", config.Listening, config.Forwarding)
 
 	go p.handleConnections()
 	go p.heartbeat()
@@ -75,7 +76,7 @@ func (p *Proxy) Start() {
 func (p *Proxy) handleConnections() {
 	for dataBus := range p.dataChan {
 		serverConn := p.Forward()
-		NewServer(serverConn, dataBus).Start()
+		NewConnection(serverConn, dataBus).Start()
 	}
 }
 
@@ -93,30 +94,54 @@ func (p *Proxy) Forward() net.Conn {
 func (p *Proxy) heartbeat() {
 	for {
 		select {
-		case <-p.ticker.C:
-			index := atomic.AddUint32(&p.timeTable.Index, 1) - 1
-			// Index for one second time table.
-			indexOneSec := index % 1000
-			// Index for ten second time table.
-			indexTenSec := index % 10000
+		case <-p.milliTicker.C:
+			p.updateStats(time.Millisecond)
 
-			requestsCount := atomic.LoadUint64(&p.timeTable.RequestsCount)
-			responsesCount := atomic.LoadUint64(&p.timeTable.ResponsesCount)
-
-			mutex := sync.Mutex{}
-			mutex.Lock()
-
-			p.timeTable.RequestsInOneSec[indexOneSec] = requestsCount
-			p.timeTable.ResponseInOneSec[indexOneSec] = responsesCount
-			p.timeTable.RequestsInTenSec[indexTenSec] = requestsCount
-			p.timeTable.ResponsesInTenSec[indexTenSec] = responsesCount
-
-			p.timeTable.RequestsCount = 0
-			p.timeTable.ResponsesCount = 0
-
-			mutex.Unlock()
+		case <- p.oneSecTicker.C:
+			p.updateStats(time.Second)
 		}
 	}
+}
+
+func (p *Proxy) updateStats(duration time.Duration)  {
+	mutex := sync.Mutex{}
+	mutex.Lock()
+
+	switch duration {
+	case time.Millisecond:
+		indexOneSec := p.timeTable.IndexOneSec
+
+		p.timeTable.RequestsInOneSec[indexOneSec] = p.timeTable.RequestsCount
+		p.timeTable.ResponsesInOneSec[indexOneSec] = p.timeTable.ResponsesCount
+		// Resetting requests counter.
+		p.timeTable.RequestsCount = 0
+		// Resetting responses counter.
+		p.timeTable.ResponsesCount = 0
+		// Updating the sliding window index.
+		p.timeTable.IndexOneSec++
+		p.timeTable.IndexOneSec %= 1000
+
+	case time.Second:
+		indexTenSec := p.timeTable.IndexTenSec
+		requestsSumOneSec, responsesSumOneSec := uint64(0), uint64(0)
+
+		for _, val := range p.timeTable.RequestsInOneSec {
+			requestsSumOneSec += val
+		}
+
+		for _, val := range p.timeTable.ResponsesInOneSec {
+			responsesSumOneSec += val
+		}
+
+		p.timeTable.RequestsInTenSec[indexTenSec] = requestsSumOneSec
+		p.timeTable.ResponsesInTenSec[indexTenSec] = responsesSumOneSec
+
+		// Updating the sliding window index.
+		p.timeTable.IndexTenSec++
+		p.timeTable.IndexTenSec %= 10
+	}
+
+	mutex.Unlock()
 }
 
 func (p *Proxy) reportStatus() {

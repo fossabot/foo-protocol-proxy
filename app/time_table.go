@@ -9,14 +9,19 @@ type (
 		// Request time log for 1 second.
 		RequestsInOneSec [1000]uint64
 		// Response time log for 1 second.
-		ResponseInOneSec [1000]uint64
+		ResponsesInOneSec [1000]uint64
 		// Request time log for 10 seconds.
-		RequestsInTenSec [10000]uint64
+		RequestsInTenSec [10]uint64
 		// Response time log for 10 seconds.
-		ResponsesInTenSec [10000]uint64
+		ResponsesInTenSec [10]uint64
+		// Index for one second time log array.
+		IndexOneSec uint32
+		// Index for ten seconds time log array.
+		IndexTenSec uint32
+		// Holds total number of requests in one second.
 		RequestsCount     uint64
+		// Holds total number of responses in one second.
 		ResponsesCount    uint64
-		Index             uint32
 	}
 )
 
