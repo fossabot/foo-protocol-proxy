@@ -3,6 +3,8 @@ package app
 import (
 	"flag"
 	"foo-protocol-proxy/config"
+	"log"
+	"os"
 )
 
 type (
@@ -12,7 +14,12 @@ type (
 
 func (d *Dispatcher) Run() {
 	config := d.parseConfig()
-	NewProxy(config).Start()
+	err := NewProxy(config).Start()
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 }
 
 func (d *Dispatcher) parseConfig() config.Configuration {

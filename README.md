@@ -47,7 +47,7 @@ You can use the following steps as a testing procedure
   * **Sending SIGUSR2 Signal**
       
     ```bash
-    $ kill -SIGUSR2 $(pidof foo-protocol-proxy)
+    $ kill -SIGUSR2 $(pidof foo-protocol-proxy) > /dev/null 2>&1
     ```
 
 ## Tests
@@ -56,12 +56,12 @@ TBD
 ## Coding - __Structure & Design__
 * `Dispatcher` - parses configuration, builds configuration object,
 and passes it to the proxy.
-* `Proxy` - awaits for client connections, and on every new connection, 
-a `DataBus` instance is created.
-* `DatBus` - acts as Bi-directional communication object, that
+* `Proxy` - Orchestrates the interactions between the components. 
+* `Listner` - awaits for client connections, and on every new connection, 
+a `BridgeConnection` instance is created.
+* `BridgeConnection` - acts as Bi-directional communication object, that
 passes data forward and backward to the server.
-* `Connection` - wraps the read and write logic between the proxy and server.
-* `Client` - wraps the read and write logic between the proxy and client.
+* `Analyzer` - perform analysis by sniffing all the data read and written from the server.
 * `Stats` - wraps stats data the would be flushed to stdout upon request.
 * `TimeTable` - contains snapshot of aggregated number of requests/responses at specific timestamp.
   

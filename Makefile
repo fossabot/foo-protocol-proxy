@@ -9,6 +9,12 @@ BINARY=./bin/$(shell basename `pwd`)
 .DEFAULT_GOAL: $(BINARY)
 .PHONY: clean
 
+help:
+	@echo "Please use \`make <target>\`, Available options for <target> are:"
+	@echo "  build                   to build the project."
+	@echo "  unit                    to run unit tests."
+	@echo "  integration             to run integration tests."
+
 ${BINARY}:
 	@echo "$(OK_COLOR)==> Building$(NO_COLOR)"
 	go build -o ${BINARY} .

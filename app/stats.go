@@ -1,9 +1,6 @@
 package app
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 )
@@ -76,14 +73,4 @@ func (s *Stats) CalculateAverages(timeTable *TimeTable) {
 	s.ResponseRatePerTenSecond = float64(responsesSumTenSec) / 10000
 
 	mutex.Unlock()
-}
-
-func (s *Stats) Flush() {
-	result, err := json.Marshal(s)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(result))
 }
