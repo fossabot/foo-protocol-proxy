@@ -1,7 +1,8 @@
-package app
+package communication
 
 import (
 	"bufio"
+	"foo-protocol-proxy/analysis"
 	"net"
 )
 
@@ -17,10 +18,10 @@ type BridgeConnection struct {
 	// Reading buffer for destination
 	bufDstReader *bufio.Reader
 	// Analysis channel
-	analysisChan AnalysisType
+	analysisChan analysis.AnalysisType
 }
 
-func NewBridgeConnection(srcConn, dstConn net.Conn, analysisChan AnalysisType) *BridgeConnection {
+func NewBridgeConnection(srcConn, dstConn net.Conn, analysisChan analysis.AnalysisType) *BridgeConnection {
 	return &BridgeConnection{
 		srcConn:      srcConn,
 		dstConn:      dstConn,

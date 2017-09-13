@@ -1,18 +1,19 @@
-package app
+package communication
 
 import (
-	"log"
 	"net"
 )
 
 // Listener is used to wrap an underlying listener.
 type Listener struct {
-	Listener net.Listener
+	Listener  net.Listener
+	errorChan chan error
 }
 
-func NewListener(listener net.Listener) *Listener {
+func NewListener(listener net.Listener, errorChan chan error) *Listener {
 	return &Listener{
-		Listener: listener,
+		Listener:  listener,
+		errorChan: errorChan,
 	}
 }
 
@@ -40,12 +41,12 @@ func (l *Listener) Addr() net.Addr {
 
 // Blocks on new connections, and when getting one
 // it passes it to the provided channel.
-func (l *Listener) awaitForConnections(clientConnChan chan<- net.Conn) {
+func (l *Listener) AwaitForConnections(clientConnChan chan<- net.Conn) {
 	for {
 		clientConn, err := l.Accept()
 
 		if err != nil {
-			log.Println(err)
+			l.errorChan <- err
 			continue
 		}
 

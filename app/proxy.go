@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"foo-protocol-proxy/analysis"
+	"foo-protocol-proxy/communication"
 	"foo-protocol-proxy/config"
 	"log"
 	"net"
@@ -15,19 +17,21 @@ type (
 	Proxy struct {
 		config         config.Configuration
 		clientConnChan chan net.Conn
+		analyzer       *analysis.Analyzer
 		signalChan     chan os.Signal
-		analyzer       *Analyzer
+		errorChan      chan error
 		milliTicker    *time.Ticker
 		oneSecTicker   *time.Ticker
 	}
 )
 
-func NewProxy(config config.Configuration) *Proxy {
+func NewProxy(config config.Configuration, analyzer *analysis.Analyzer) *Proxy {
 	return &Proxy{
 		config:         config,
 		clientConnChan: make(chan net.Conn),
+		analyzer:       analyzer,
 		signalChan:     make(chan os.Signal, 1),
-		analyzer:       NewAnalyzer(make(AnalysisType)),
+		errorChan:      make(chan error, 10),
 		milliTicker:    time.NewTicker(time.Millisecond),
 		oneSecTicker:   time.NewTicker(time.Second),
 	}
@@ -40,18 +44,18 @@ func (p *Proxy) Start() error {
 		return err
 	}
 
-	listener := NewListener(lis)
+	listener := communication.NewListener(lis, p.errorChan)
 
 	log.Printf("Forwarding from %s to %s", listener.Addr(), p.config.Forwarding)
 
+	go listener.AwaitForConnections(p.clientConnChan)
 	go p.handleClientConnections(p.clientConnChan)
 	go p.heartbeat()
 	go p.reportStatus()
-	go p.analyzer.monitorData()
+	go p.analyzer.MonitorData()
+	go p.monitorErrors()
 
 	signal.Notify(p.signalChan, syscall.SIGUSR2)
-
-	listener.awaitForConnections(p.clientConnChan)
 
 	return nil
 }
@@ -65,7 +69,7 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 			os.Exit(1)
 		}
 
-		bridgeConnection := NewBridgeConnection(clientConn, serverConn, p.analyzer.dataSrc)
+		bridgeConnection := communication.NewBridgeConnection(clientConn, serverConn, p.analyzer.GetDataSource())
 		bridgeConnection.Bind()
 	}
 
@@ -86,10 +90,10 @@ func (p *Proxy) heartbeat() {
 	for {
 		select {
 		case <-p.milliTicker.C:
-			p.analyzer.timeTable.updateStats(time.Millisecond)
+			p.analyzer.UpdateStats(time.Millisecond)
 
 		case <-p.oneSecTicker.C:
-			p.analyzer.timeTable.updateStats(time.Second)
+			p.analyzer.UpdateStats(time.Second)
 		}
 	}
 }
@@ -97,14 +101,25 @@ func (p *Proxy) heartbeat() {
 func (p *Proxy) reportStatus() {
 	for {
 		<-p.signalChan
-		p.analyzer.stats.CalculateAverages(p.analyzer.timeTable)
 		report, err := p.analyzer.Report()
 
 		if err != nil {
-			log.Fatal(err)
+			p.errorChan <- err
+			return
 		}
 
 		fmt.Println(report)
+	}
+}
+
+func (p *Proxy) monitorErrors() {
+	for {
+		select {
+		case err := <-p.errorChan:
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 }
 
