@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"foo-protocol-proxy/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"log"
 	"net/http"
 )

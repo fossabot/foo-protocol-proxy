@@ -1,9 +1,9 @@
 package app
 
 import (
-	"foo-protocol-proxy/analysis"
-	"foo-protocol-proxy/config"
-	"foo-protocol-proxy/handlers"
+	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/handlers"
 	"log"
 	"net/http"
 )

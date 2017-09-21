@@ -2,7 +2,7 @@ package communication
 
 import (
 	"bufio"
-	"foo-protocol-proxy/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"net"
 )
 

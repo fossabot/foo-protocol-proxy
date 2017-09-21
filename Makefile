@@ -2,6 +2,8 @@ NO_COLOR=\033[0m
 OK_COLOR=\033[32;01m
 ERROR_COLOR=\033[31;01m
 WARN_COLOR=\033[33;01m
+OSs=darwin linux
+ARCHS=386 amd64
 
 # Binary output name.
 BINARY=./bin/$(shell basename `pwd`)
@@ -17,7 +19,11 @@ help:
 
 ${BINARY}:
 	@echo "$(OK_COLOR)==> Building$(NO_COLOR)"
-	go build -o ${BINARY} .
+	for GOOS in $(OSs); do \
+		for GOARCH in $(ARCHS); do \
+        	env GOOS=$$GOOS GOARCH=$$GOARCH go build -v -o ${BINARY}-$$GOOS-$$GOARCH .; \
+		done; \
+	done
 
 build: clean \
     vet \
@@ -26,7 +32,12 @@ build: clean \
 # Cleaning the project, by deleting binaries.
 clean:
 	@echo "$(OK_COLOR)==> Cleaning$(NO_COLOR)"
-	if [ -f ${BINARY} ] ; then rm -rf ${BINARY} ; fi
+	for GOOS in $(OSs); do \
+        for GOARCH in $(ARCHS); do \
+            TARGET_BINARY=${BINARY}-$$GOOS-$$GOARCH; \
+            if [ -f $$TARGET_BINARY ] ; then rm -rf $$TARGET_BINARY ; fi \
+        done; \
+    done
 	go clean
 
 # Simplified dead code detector. Used for skipping certain checks on unreachable code
@@ -34,3 +45,7 @@ clean:
 # https://golang.org/cmd/vet/
 vet:
 	go vet ./...
+
+# Unit tests
+unit:
+	go test ./... -v --cover

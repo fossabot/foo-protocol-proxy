@@ -17,9 +17,9 @@ type (
 		// Response time log for 10 seconds.
 		ResponsesInTenSec [10]uint64
 		// Index for one second time log array.
-		IndexOneSec uint32
+		IndexOneSec uint16
 		// Index for ten seconds time log array.
-		IndexTenSec uint32
+		IndexTenSec uint8
 		// Holds total number of requests in one second.
 		RequestsCount uint64
 		// Holds total number of responses in one second.
@@ -27,13 +27,13 @@ type (
 	}
 )
 
-func (l *TimeTable) UpdateCounters(msgType MessageType) {
+func (t *TimeTable) UpdateCounters(msgType MessageType) {
 	switch msgType {
 	case TYPE_REQ:
-		atomic.AddUint64(&l.RequestsCount, 1)
+		atomic.AddUint64(&t.RequestsCount, 1)
 
 	case TYPE_ACK, TYPE_NAK:
-		atomic.AddUint64(&l.ResponsesCount, 1)
+		atomic.AddUint64(&t.ResponsesCount, 1)
 	}
 }
 

@@ -1,14 +1,16 @@
 package app
 
 import (
-	"fmt"
-	"foo-protocol-proxy/analysis"
-	"foo-protocol-proxy/communication"
-	"foo-protocol-proxy/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/communication"
+	"github.com/ahmedkamals/foo-protocol-proxy/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/persistance"
+	"io"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -22,10 +24,15 @@ type (
 		errorChan      chan error
 		milliTicker    *time.Ticker
 		oneSecTicker   *time.Ticker
+		saver          *persistance.Saver
 	}
 )
 
-func NewProxy(config config.Configuration, analyzer *analysis.Analyzer) *Proxy {
+func NewProxy(
+	config config.Configuration,
+	analyzer *analysis.Analyzer,
+	saver *persistance.Saver,
+) *Proxy {
 	return &Proxy{
 		config:         config,
 		clientConnChan: make(chan net.Conn),
@@ -34,6 +41,7 @@ func NewProxy(config config.Configuration, analyzer *analysis.Analyzer) *Proxy {
 		errorChan:      make(chan error, 10),
 		milliTicker:    time.NewTicker(time.Millisecond),
 		oneSecTicker:   time.NewTicker(time.Second),
+		saver:          saver,
 	}
 }
 
@@ -43,6 +51,8 @@ func (p *Proxy) Start() error {
 	if err != nil {
 		return err
 	}
+
+	p.recoverData()
 
 	listener := communication.NewListener(lis, p.errorChan)
 
@@ -60,9 +70,25 @@ func (p *Proxy) Start() error {
 	return nil
 }
 
+func (p *Proxy) recoverData() {
+	data, err := p.saver.Read()
+
+	if err != nil && err != io.EOF {
+		log.Fatal(err)
+	}
+
+	recovery := persistance.NewEmptyRecovery()
+	recovery.Unmarshal(data)
+
+	mutex := sync.Mutex{}
+	mutex.Lock()
+	p.analyzer.RestoreTenSecCounter(recovery)
+	mutex.Unlock()
+}
+
 func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 	for clientConn := range clientConnChan {
-		serverConn, err := p.Forward()
+		serverConn, err := p.forward()
 
 		if err != nil {
 			log.Fatal(err)
@@ -72,11 +98,9 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 		bridgeConnection := communication.NewBridgeConnection(clientConn, serverConn, p.analyzer.GetDataSource())
 		bridgeConnection.Bind()
 	}
-
-	p.Close()
 }
 
-func (p *Proxy) Forward() (net.Conn, error) {
+func (p *Proxy) forward() (net.Conn, error) {
 	serverConn, err := net.Dial("tcp", p.config.Forwarding)
 
 	if err != nil {
@@ -94,8 +118,26 @@ func (p *Proxy) heartbeat() {
 
 		case <-p.oneSecTicker.C:
 			p.analyzer.UpdateStats(time.Second)
+			p.persistData()
 		}
 	}
+}
+
+func (p *Proxy) persistData() {
+	timeTable := p.analyzer.GetTimeTable()
+	r := persistance.NewRecovery(
+		timeTable.IndexTenSec,
+		uint64(time.Now().Unix()),
+		timeTable.RequestsInTenSec,
+		timeTable.ResponsesInTenSec,
+	)
+	data, err := r.Marshall()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p.saver.Save(data)
 }
 
 func (p *Proxy) reportStatus() {
@@ -108,7 +150,7 @@ func (p *Proxy) reportStatus() {
 			return
 		}
 
-		fmt.Println(report)
+		println(report)
 	}
 }
 

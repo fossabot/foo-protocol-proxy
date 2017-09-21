@@ -1,7 +1,7 @@
 package main
 
 import (
-	"foo-protocol-proxy/app"
+	"github.com/ahmedkamals/foo-protocol-proxy/app"
 )
 
 func main() {
