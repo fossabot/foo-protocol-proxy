@@ -1,9 +1,4 @@
-NO_COLOR=\033[0m
-OK_COLOR=\033[32;01m
-ERROR_COLOR=\033[31;01m
-WARN_COLOR=\033[33;01m
-OSs=darwin linux
-ARCHS=386 amd64
+include Makefile.conf
 
 # Binary output name.
 BINARY=./bin/$(shell basename `pwd`)
@@ -21,7 +16,7 @@ ${BINARY}:
 	@echo "$(OK_COLOR)==> Building$(NO_COLOR)"
 	for GOOS in $(OSs); do \
 		for GOARCH in $(ARCHS); do \
-        	env GOOS=$$GOOS GOARCH=$$GOARCH go build -v -o ${BINARY}-$$GOOS-$$GOARCH .; \
+        	env GOOS=$$GOOS GOARCH=$$GOARCH go build -a -v -o ${BINARY}-$$GOOS-$$GOARCH -installsuffix cgo --tags netgo --ldflags '-extldflags "-lm -lstdc++ -static"' .; \
 		done; \
 	done
 

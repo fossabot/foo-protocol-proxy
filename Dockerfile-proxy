@@ -1,0 +1,34 @@
+FROM golang:alpine as builder
+MAINTAINER Ahmed Kamal <me.ahmed.kamal@gmail.com>
+
+WORKDIR /go/src/app
+
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache git
+
+COPY . .
+
+# "go get -d -v ./..."
+RUN go-wrapper download && \
+# "go install -v ./..."
+    go-wrapper install
+
+RUN \
+    # Disable cross-compiling.
+    CGO_ENABLED=0 \
+    # Compile linux only.
+    GOOS=linux \
+    # Architecture.
+    GOARCH=amd64 \
+    go build -a -installsuffix cgo -o bin/foo-protocol-proxy .
+
+# Production
+FROM alpine as production
+# Copying the artifact generated from the previous step "builder".
+COPY --from=builder /go/src/app/bin/foo-protocol-proxy /usr/bin/foo-protocol-proxy
+ENTRYPOINT foo-protocol-proxy \
+            -forward ":"$FORWARDING_PORT \
+            -listen ":"$LISTENING_PORT \
+            -http ":"$HTTP_PORT \
+            -recovery-path $RECOVERY_PATH

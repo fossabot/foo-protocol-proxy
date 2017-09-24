@@ -1,0 +1,24 @@
+version: '2.0'
+
+services:
+  Proxy:
+    container_name: foo-proxy-$TAG
+    image: "weaveworks/foo-proxy:$TAG"
+    cpu_shares: 100
+    mem_limit: 500M
+    build:
+      context: .
+      dockerfile: Dockerfile-proxy
+    env_file:
+      - env/proxy.env
+    environment:
+      FORWARDING_PORT: ${FORWARDING_PORT}
+      LISTENING_PORT: ${LISTENING_PORT}
+      HTTP_PORT: ${HTTP_PORT}
+      RECOVERY_PATH: ${RECOVERY_PATH}
+    ports:
+      - "$LISTENING_PORT:$LISTENING_PORT" # Proxy
+      - "$HTTP_PORT:$HTTP_PORT" # HTTP
+    privileged: true
+    restart: on-failure
+    network_mode: "host"
