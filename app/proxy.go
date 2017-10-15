@@ -4,7 +4,7 @@ import (
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/communication"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/persistance"
+	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
 	"io"
 	"log"
 	"net"
@@ -16,6 +16,8 @@ import (
 )
 
 type (
+	// Proxy orchestrates the interactions between the server and client,
+	// and collection of analysis data.
 	Proxy struct {
 		config         config.Configuration
 		clientConnChan chan net.Conn
@@ -24,14 +26,15 @@ type (
 		errorChan      chan error
 		milliTicker    *time.Ticker
 		oneSecTicker   *time.Ticker
-		saver          *persistance.Saver
+		saver          *persistence.Saver
 	}
 )
 
+// NewProxy allocates and returns a new Proxy to handle connections forwarding/reversing.
 func NewProxy(
 	config config.Configuration,
 	analyzer *analysis.Analyzer,
-	saver *persistance.Saver,
+	saver *persistence.Saver,
 ) *Proxy {
 	return &Proxy{
 		config:         config,
@@ -45,6 +48,7 @@ func NewProxy(
 	}
 }
 
+// Start initiates the proxy operations.
 func (p *Proxy) Start() error {
 	lis, err := net.Listen("tcp", p.config.Listening)
 
@@ -77,7 +81,7 @@ func (p *Proxy) recoverData() {
 		log.Fatal(err)
 	}
 
-	recovery := persistance.NewEmptyRecovery()
+	recovery := persistence.NewEmptyRecovery()
 	recovery.Unmarshal(data)
 
 	mutex := sync.Mutex{}
@@ -95,7 +99,12 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 			os.Exit(1)
 		}
 
-		bridgeConnection := communication.NewBridgeConnection(clientConn, serverConn, p.analyzer.GetDataSource())
+		bridgeConnection := communication.NewBridgeConnection(
+			clientConn,
+			serverConn,
+			p.analyzer.GetDataSource(),
+			p.errorChan,
+		)
 		bridgeConnection.Bind()
 	}
 }
@@ -125,13 +134,13 @@ func (p *Proxy) heartbeat() {
 
 func (p *Proxy) persistData() {
 	timeTable := p.analyzer.GetTimeTable()
-	r := persistance.NewRecovery(
+	r := persistence.NewRecovery(
 		timeTable.IndexTenSec,
 		uint64(time.Now().Unix()),
 		timeTable.RequestsInTenSec,
 		timeTable.ResponsesInTenSec,
 	)
-	data, err := r.Marshall()
+	data, err := r.Marshal()
 
 	if err != nil {
 		log.Fatal(err)
@@ -165,9 +174,10 @@ func (p *Proxy) monitorErrors() {
 	}
 }
 
-func (p *Proxy) Close() {
+func (p *Proxy) close() {
 	close(p.clientConnChan)
 	close(p.signalChan)
+	p.saver.Close()
 	p.milliTicker.Stop()
 	p.oneSecTicker.Stop()
 }

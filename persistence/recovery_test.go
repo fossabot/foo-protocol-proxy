@@ -1,8 +1,8 @@
-package persistance
+package persistence
 
 import (
 	"encoding/json"
-	testingUtil "github.com/ahmedkamals/foo-protocol-proxy/testing_util"
+	testingUtil "github.com/ahmedkamals/foo-protocol-proxy/testingutil"
 	"reflect"
 	"testing"
 )
@@ -17,7 +17,7 @@ func TestShouldUnmarshallCorrectly(t *testing.T) {
 
 	testCases := []testingUtil.TestCase{
 		{
-			Id:       "Should unmarshall recovered data correctly.",
+			ID:       "Should unmarshall recovered data correctly.",
 			Input:    []byte(data),
 			Expected: NewRecovery(7, 1505951090, expectedRequests, expectedResponses),
 		},

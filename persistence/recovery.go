@@ -1,10 +1,11 @@
-package persistance
+package persistence
 
 import (
 	"encoding/json"
 )
 
 type (
+	// Recovery type manages data that should be recovered later on.
 	Recovery struct {
 		Index             uint8      `json:"index"`
 		TimeStamp         uint64     `json:"time_stamp"`
@@ -13,6 +14,9 @@ type (
 	}
 )
 
+// NewRecovery allocates and returns a new Recovery
+// from a given data
+// to track the data that should be recovered later.
 func NewRecovery(index uint8, timestamp uint64, requestsInTenSec, responsesInTenSec [10]uint64) *Recovery {
 	return &Recovery{
 		Index:             index,
@@ -22,10 +26,12 @@ func NewRecovery(index uint8, timestamp uint64, requestsInTenSec, responsesInTen
 	}
 }
 
+// NewEmptyRecovery allocates and returns a new empty Recovery.
 func NewEmptyRecovery() *Recovery {
 	return new(Recovery)
 }
 
+// Unmarshal parses the JSON-encoded recovery data.
 func (r *Recovery) Unmarshal(data []byte) error {
 	savedData := &Recovery{}
 
@@ -43,6 +49,7 @@ func (r *Recovery) Unmarshal(data []byte) error {
 	return nil
 }
 
-func (r *Recovery) Marshall() ([]byte, error) {
+// Marshal returns the JSON encoding of the recovery object.
+func (r *Recovery) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }

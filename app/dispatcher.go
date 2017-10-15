@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/persistance"
+	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
 	"log"
 	"os"
 	"os/signal"
@@ -13,15 +13,17 @@ import (
 )
 
 type (
+	// Dispatcher acts as en entry point for the application.
 	Dispatcher struct {
 		proxy *Proxy
 	}
 )
 
+// Run starts the dispatcher.
 func (d *Dispatcher) Run() {
 	config := d.parseConfig()
 	analyzer := analysis.NewAnalyzer()
-	saver := persistance.NewSaver(config.RecoveryPath)
+	saver := persistence.NewSaver(config.RecoveryPath)
 
 	d.proxy = NewProxy(config, analyzer, saver)
 	err := d.proxy.Start()
@@ -31,9 +33,9 @@ func (d *Dispatcher) Run() {
 		os.Exit(1)
 	}
 
-	NewHttpServer(config, analyzer).Start()
+	NewHTTPServer(config, analyzer).Start()
 
-	d.BlockIndefinitely()
+	d.blockIndefinitely()
 }
 
 func (d *Dispatcher) parseConfig() config.Configuration {
@@ -48,12 +50,12 @@ func (d *Dispatcher) parseConfig() config.Configuration {
 	return config.Configuration{
 		Listening:    *listen,
 		Forwarding:   *forward,
-		HttpAddress:  *httpAddr,
+		HTTPAddress:  *httpAddr,
 		RecoveryPath: *recoveryPath,
 	}
 }
 
-func (d *Dispatcher) BlockIndefinitely() {
+func (d *Dispatcher) blockIndefinitely() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan,
 		syscall.SIGHUP,
@@ -64,7 +66,7 @@ func (d *Dispatcher) BlockIndefinitely() {
 	for {
 		select {
 		case s := <-signalChan:
-			d.proxy.Close()
+			d.proxy.close()
 			log.Println(fmt.Sprintf("Captured %v. Exiting...", s))
 			os.Exit(0)
 		}

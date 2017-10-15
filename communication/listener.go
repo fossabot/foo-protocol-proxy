@@ -10,6 +10,7 @@ type Listener struct {
 	errorChan chan error
 }
 
+// NewListener allocates and returns and Listener.
 func NewListener(listener net.Listener, errorChan chan error) *Listener {
 	return &Listener{
 		Listener:  listener,
@@ -39,7 +40,7 @@ func (l *Listener) Addr() net.Addr {
 	return l.Listener.Addr()
 }
 
-// Blocks on new connections, and when getting one
+// AwaitForConnections blocks on new connections, and when getting one
 // it passes it to the provided channel.
 func (l *Listener) AwaitForConnections(clientConnChan chan<- net.Conn) {
 	for {

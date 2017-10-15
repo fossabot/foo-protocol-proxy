@@ -1,4 +1,4 @@
-package persistance
+package persistence
 
 import (
 	"log"
@@ -7,11 +7,13 @@ import (
 )
 
 type (
+	// Saver is an interface for I/O operations.
 	Saver struct {
 		file *os.File
 	}
 )
 
+// NewSaver allocates and returns a new Saver.
 func NewSaver(filePath string) *Saver {
 	path := path.Dir(filePath)
 	_, err := os.Stat(path)
@@ -31,6 +33,7 @@ func NewSaver(filePath string) *Saver {
 	}
 }
 
+// Read reads and returns saved data.
 func (s *Saver) Read() ([]byte, error) {
 	// 4K buffer
 	data := make([]byte, 4096)
@@ -44,6 +47,7 @@ func (s *Saver) Read() ([]byte, error) {
 	return data[:n], nil
 }
 
+// Save saves given data by truncating and overriding the current saved data.
 func (s *Saver) Save(data []byte) error {
 	s.file.Seek(0, 0)
 	s.file.Truncate(0)
@@ -57,6 +61,7 @@ func (s *Saver) Save(data []byte) error {
 	return nil
 }
 
+// Close closes the underlying layer used for saving.
 func (s *Saver) Close() error {
 	return s.file.Close()
 }

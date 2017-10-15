@@ -6,6 +6,7 @@ import (
 )
 
 type (
+	// Stats type acts as an interface to the data that will be exported later.
 	Stats struct {
 		// msg_total — total number of messages (integer)
 		TotalMessages uint64 `json:"msg_total"`
@@ -26,22 +27,23 @@ type (
 	}
 )
 
-func (s *Stats) UpdateTotalCounters(msgType MessageType) {
+// UpdateTotalCounters updates total counts.
+func (s *Stats) UpdateTotalCounters(msgType message) {
 	switch msgType {
-	case TYPE_REQ:
+	case TypeReq:
 		atomic.AddUint64(&s.TotalRequests, 1)
 
-	case TYPE_ACK:
+	case TypeAck:
 		atomic.AddUint64(&s.TotalACK, 1)
 
-	case TYPE_NAK:
+	case TypeNak:
 		atomic.AddUint64(&s.TotalNAK, 1)
 	}
 
 	atomic.AddUint64(&s.TotalMessages, 1)
 }
 
-// Calculates average req/response in 1s/10s.
+// CalculateAverages calculates average req/response in 1s/10s.
 func (s *Stats) CalculateAverages(timeTable *TimeTable) {
 	mutex := sync.Mutex{}
 	mutex.Lock()
