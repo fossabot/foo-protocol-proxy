@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/persistance"
-	"github.com/ahmedkamals/foo-protocol-proxy/testing_util"
+	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
+	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
 	"net"
 	"reflect"
 	"testing"
@@ -22,16 +22,16 @@ func TestShouldStartProperly(t *testing.T) {
 	proxy := NewProxy(config.Configuration{
 		Forwarding:   ":8010",
 		Listening:    ":8011",
-		HttpAddress:  "0.0.0.0:8001",
+		HTTPAddress:  "0.0.0.0:8001",
 		RecoveryPath: "data/recovery.json",
 	},
 		getMockedAnalyzer(),
 		getMockedSaver(),
 	)
 
-	testCases := []testing_util.TestCase{
+	testCases := []testingutil.TestCase{
 		{
-			Id:       "Connection forwarding",
+			ID:       "Connection forwarding",
 			Input:    proxy,
 			Expected: "",
 		},
@@ -62,6 +62,6 @@ func getMockedAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{}
 }
 
-func getMockedSaver() *persistance.Saver {
-	return &persistance.Saver{}
+func getMockedSaver() *persistence.Saver {
+	return &persistence.Saver{}
 }

@@ -6,10 +6,12 @@ import (
 )
 
 type (
+	// HealthHandler acts as an interface for server health over HTTP.
 	HealthHandler struct {
 	}
 )
 
+// NewHealthHandler allocates and returns a new HealthHandler to report health.
 func NewHealthHandler() http.Handler {
 	return new(HealthHandler)
 }

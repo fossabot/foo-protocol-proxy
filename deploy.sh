@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 
+PREFIX="weaveworks"
 TAG="0.0.1"
 FORWARDING_PORT=8001
 LISTENING_PORT=8002
@@ -18,6 +19,7 @@ do
     esac
 done
 
+export PREFIX="$PREFIX"
 export TAG="$TAG"
 export FORWARDING_PORT="$FORWARDING_PORT"
 export LISTENING_PORT="$LISTENING_PORT"

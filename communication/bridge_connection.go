@@ -13,87 +13,81 @@ type BridgeConnection struct {
 	srcConn net.Conn
 	// Destination connection
 	dstConn net.Conn
-	// Reading buffer for source
-	bufSrcReader *bufio.Reader
-	// Reading buffer for destination
-	bufDstReader *bufio.Reader
 	// Analysis channel
-	analysisChan analysis.AnalysisType
+	analysisChan analysis.Aggregation
+	// Errors chanel
+	errChan chan error
 }
 
-func NewBridgeConnection(srcConn, dstConn net.Conn, analysisChan analysis.AnalysisType) *BridgeConnection {
+// NewBridgeConnection returns a new BridgeConnection
+// that forwards connections from source to destination and vice versa.
+func NewBridgeConnection(
+	srcConn,
+	dstConn net.Conn,
+	analysisChan analysis.Aggregation,
+	errChan chan error,
+) *BridgeConnection {
 	return &BridgeConnection{
 		srcConn:      srcConn,
 		dstConn:      dstConn,
-		bufSrcReader: bufio.NewReader(srcConn),
-		bufDstReader: bufio.NewReader(dstConn),
 		analysisChan: analysisChan,
+		errChan:      errChan,
 	}
 }
 
+// Bind starts the binding between the server and client connections.
 func (b *BridgeConnection) Bind() {
+	srcBuffer := bufio.NewReader(b.srcConn)
+	dstBuffer := bufio.NewReader(b.dstConn)
+
+	b.pipe(srcBuffer, dstBuffer)
+}
+
+func (b *BridgeConnection) pipe(src, dst *bufio.Reader) {
 	go func() {
 		for {
-			b.Forward()
-			b.Reverse()
+			b.copyWait(src, b.dstConn, b.errChan)
+			b.copyWait(dst, b.srcConn, b.errChan)
 		}
 	}()
 }
 
-func (b *BridgeConnection) Forward() error {
-	data, err := b.read(b.bufSrcReader)
+func (b *BridgeConnection) copyWait(src *bufio.Reader, dst net.Conn, errChan chan error) {
+	data, err := b.read(src)
 
 	if err != nil {
-		b.Close()
-		return err
+		errChan <- err
+		errChan <- b.close()
+		return
 	}
 
-	_, err = b.write(b.dstConn, []byte(data))
+	_, err = b.write(dst, []byte(data))
 
 	if err != nil {
-		b.Close()
-		return err
+		errChan <- err
+		errChan <- b.close()
+		return
 	}
-
-	return nil
 }
 
-func (b *BridgeConnection) Reverse() error {
-	data, err := b.read(b.bufDstReader)
+func (b *BridgeConnection) read(src *bufio.Reader) ([]byte, error) {
+	data, err := src.ReadString('\n')
 
 	if err != nil {
-		b.Close()
-		return err
+		return []byte{}, err
 	}
 
-	_, err = b.write(b.srcConn, []byte(data))
-
-	if err != nil {
-		b.Close()
-		return err
-	}
-
-	return nil
+	return []byte(data), err
 }
 
-func (b *BridgeConnection) read(buffer *bufio.Reader) (string, error) {
-	str, err := buffer.ReadString('\n')
-
-	if err != nil {
-		return "", err
-	}
-
-	return str, err
-}
-
-func (b *BridgeConnection) write(conn net.Conn, data []byte) (int, error) {
+func (b *BridgeConnection) write(dst net.Conn, data []byte) (int, error) {
 	// Updating analysis channel with the written data.
 	b.analysisChan <- string(data)
 
-	return conn.Write(data)
+	return dst.Write(data)
 }
 
-func (b *BridgeConnection) Close() error {
+func (b *BridgeConnection) close() error {
 	err := b.srcConn.Close()
 
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 )
 
 type (
+	// TimeTable type holds reference for data that are updated over time.
 	TimeTable struct {
 		// Request time log for 1 second.
 		RequestsInOneSec [1000]uint64
@@ -27,52 +28,53 @@ type (
 	}
 )
 
-func (t *TimeTable) UpdateCounters(msgType MessageType) {
+// UpdateCounters updates associated counter based on message type.
+func (t *TimeTable) UpdateCounters(msgType message) {
 	switch msgType {
-	case TYPE_REQ:
+	case TypeReq:
 		atomic.AddUint64(&t.RequestsCount, 1)
 
-	case TYPE_ACK, TYPE_NAK:
+	case TypeAck, TypeNak:
 		atomic.AddUint64(&t.ResponsesCount, 1)
 	}
 }
 
-func (l *TimeTable) updateStats(duration time.Duration) {
+func (t *TimeTable) updateStats(duration time.Duration) {
 	mutex := sync.Mutex{}
 	mutex.Lock()
 
 	switch duration {
 	case time.Millisecond:
-		indexOneSec := l.IndexOneSec
+		indexOneSec := t.IndexOneSec
 
-		l.RequestsInOneSec[indexOneSec] = l.RequestsCount
-		l.ResponsesInOneSec[indexOneSec] = l.ResponsesCount
+		t.RequestsInOneSec[indexOneSec] = t.RequestsCount
+		t.ResponsesInOneSec[indexOneSec] = t.ResponsesCount
 		// Resetting requests counter.
-		l.RequestsCount = 0
+		t.RequestsCount = 0
 		// Resetting responses counter.
-		l.ResponsesCount = 0
+		t.ResponsesCount = 0
 		// Updating the sliding window index.
-		l.IndexOneSec++
-		l.IndexOneSec %= 1000
+		t.IndexOneSec++
+		t.IndexOneSec %= 1000
 
 	case time.Second:
-		indexTenSec := l.IndexTenSec
+		indexTenSec := t.IndexTenSec
 		requestsSumOneSec, responsesSumOneSec := uint64(0), uint64(0)
 
-		for _, val := range l.RequestsInOneSec {
+		for _, val := range t.RequestsInOneSec {
 			requestsSumOneSec += val
 		}
 
-		for _, val := range l.ResponsesInOneSec {
+		for _, val := range t.ResponsesInOneSec {
 			responsesSumOneSec += val
 		}
 
-		l.RequestsInTenSec[indexTenSec] = requestsSumOneSec
-		l.ResponsesInTenSec[indexTenSec] = responsesSumOneSec
+		t.RequestsInTenSec[indexTenSec] = requestsSumOneSec
+		t.ResponsesInTenSec[indexTenSec] = responsesSumOneSec
 
 		// Updating the sliding window index.
-		l.IndexTenSec++
-		l.IndexTenSec %= 10
+		t.IndexTenSec++
+		t.IndexTenSec %= 10
 	}
 
 	mutex.Unlock()

@@ -9,31 +9,34 @@ import (
 )
 
 type (
-	HttpServer struct {
+	// HTTPServer is an interface for handling HTTP connections.
+	HTTPServer struct {
 		config    config.Configuration
 		analyzer  *analysis.Analyzer
 		errorChan chan error
 	}
 )
 
-func NewHttpServer(config config.Configuration, analyzer *analysis.Analyzer) *HttpServer {
-	return &HttpServer{
+// NewHTTPServer allocates and returns a new HTTPServer to handle HTTP connections.
+func NewHTTPServer(config config.Configuration, analyzer *analysis.Analyzer) *HTTPServer {
+	return &HTTPServer{
 		config:    config,
 		analyzer:  analyzer,
 		errorChan: make(chan error, 10),
 	}
 }
 
-func (s *HttpServer) Start() {
+// Start initiates routes configuration, and starts listening.
+func (s *HTTPServer) Start() {
 	s.configureRoutes()
 
 	go func() {
-		s.errorChan <- http.ListenAndServe(s.config.HttpAddress, nil)
+		s.errorChan <- http.ListenAndServe(s.config.HTTPAddress, nil)
 	}()
 	go s.monitorErrors()
 }
 
-func (s *HttpServer) configureRoutes() {
+func (s *HTTPServer) configureRoutes() {
 	routes := []string{
 		"/metrics",
 		"/stats",
@@ -46,7 +49,7 @@ func (s *HttpServer) configureRoutes() {
 	}
 }
 
-func (s *HttpServer) getHandler(route string) http.Handler {
+func (s *HTTPServer) getHandler(route string) http.Handler {
 	var handler http.Handler
 
 	switch route {
@@ -60,7 +63,7 @@ func (s *HttpServer) getHandler(route string) http.Handler {
 	return handler
 }
 
-func (s *HttpServer) monitorErrors() {
+func (s *HTTPServer) monitorErrors() {
 	for {
 		select {
 		case err := <-s.errorChan:

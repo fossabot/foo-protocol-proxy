@@ -7,11 +7,13 @@ import (
 )
 
 type (
+	// MetricsHandler acts as an interface for the metrics data that should be exported over HTTP.
 	MetricsHandler struct {
 		analyzer *analysis.Analyzer
 	}
 )
 
+// NewMetricsHandler allocates and returns a new MetricsHandler to report stats.
 func NewMetricsHandler(analyzer *analysis.Analyzer) http.Handler {
 	return &MetricsHandler{
 		analyzer: analyzer,
