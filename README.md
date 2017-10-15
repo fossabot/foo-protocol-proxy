@@ -1,7 +1,7 @@
 Foo Protocol Proxy
 ==================
 
-[![GitHub tag](https://img.shields.io/github/tag/ahmedkamals/foo-protoco-proxy.svg?style=flat)](https://github.com/ahmedkamals/foo-protocol-proxy/releases  "Version Tag")
+[![GitHub tag](https://img.shields.io/github/tag/ahmedkamals/foo-protocol-proxy.svg?style=flat)](https://github.com/ahmedkamals/foo-protocol-proxy/releases  "Version Tag")
 [![Coverage Status](https://coveralls.io/repos/github/ahmedkamals/foo-protocol-proxy/badge.svg?branch=master)](https://coveralls.io/github/ahmedkamals/foo-protocol-proxy?branch=master  "Code Coverage")
 [![Build Status](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy  "Build Status")
 [![Go Report Card](https://goreportcard.com/badge/github.com/ahmedkamals/foo-protocol-proxy)](https://goreportcard.com/report/github.com/ahmedkamals/foo-protocol-proxy  "Go Report Card")
