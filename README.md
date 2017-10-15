@@ -29,7 +29,7 @@ Table of Contents
     * [Installation](#installation)
     * [Test Driver](#test-driver)
 * [Tests](#tests)
-* [Coding - __Structure & Design__](#coding---__structure-&-design__)
+* [Coding - __Structure & Design__](#coding---structure--design)
 * [Todo](#todo)
 
 Overview
@@ -73,9 +73,17 @@ A->B: <disconnect>
 
 The proxy has a reporting features like:
 
-- Reporting stats when sending `SIGUSR2` signal to the process and over HTTP.
-- Health check over HTTP.
+- Reporting stats in JSON format to stdout when sending `SIGUSR2` signal to the process.
+- Reporting stats in JSON format over HTTP "/stats" or "/metrics.
+- Health check over HTTP "/health" or "/status".
 - Data recovery after failure using a sliding window of `10s` time frame.
+
+##### JSON Sample Response
+
+```json
+{"msg_total":10,"msg_req":10,"msg_ack":8,"msg_nak":2,"request_rate_1s":0.005,"request_rate_10s":0.004,"response_rate_1s":0.004,"response_rate_10s":0.003}
+
+```
 
 Getting Started
 ---------------
