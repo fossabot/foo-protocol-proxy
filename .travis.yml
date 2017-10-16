@@ -13,16 +13,24 @@ go:
   - 1.9
   - tip
 
-# Use Go 1.5's vendoring experiment for 1.5 tests.
 env:
-  - GO15VENDOREXPERIMENT=1
+  matrix:
+    # Use Go 1.5's vendoring experiment for 1.5 tests.
+    - GO15VENDOREXPERIMENT=1
+  global:
+    secure: "mW/CjSIq7lQOjhN+syhoJHNh0oyt9teDlhB9ZUSsylkVQPisHPj/G6D5KSnjWmQzvuVFlxN1++O0VAtDasEOCir4YTUwQVgfceC90bePxaTLcJeva3mJNDVBMZR/GVrsL9uunHscfLRNtX6TBLCh4NEO6H341J6vbF0GIQ3deOlCHBLNLnBsc1larUAzjOoIqeK0+X4rEo4HaMg1BWuH0XL+QNdI2WVPXueNOVhimCClsW3HSgPEea5KTozMd08Kr+LTbt+N2RaM6jb/F+CfCQEy8f7VoZKMZlD5m5VBI/AmJtjrR9mcFs0cKq4+im73x/x6v4WoCDndHdP3wq5vvVZzOK3CbhiYAUqp5nsiNzWu6IPyS9q81GleBFWI7zT6d9bZG5ah/+4J8Vw7AXwrYb8691sRQ5HzXVkV9vkDfV/YSsse0kIiwOywBGSN1zMzjxoXZdCAKBWPiLLhnxNJLJfPjwUCZzXEGXPfRVNT6PZPH4smDceaDYntHQBQAO9w3C4PCi0Qczolj8d+XFmRhstl6xoTcMiPsPZESA4SIilwFJlmOzLQvDrfh3LUWMMS06Im1u79amYLMNq7LMtcsuhm3LbvgHxuIsEEnwC+covHutPeDiExte843dKrnJL2cgZa2ttzpoIMk2qgT/XV2MZiUny+da9wLkoiJLWrXTo="
 
 install:
   - make get-deps
+  # Coveralls dependencies
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
 
 script:
   - make unit
   - make integration
+  - go test -v -covermode=count -coverprofile=coverage.out ./app
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
 after_success:
   - echo "TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST}"

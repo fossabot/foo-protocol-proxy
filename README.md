@@ -74,8 +74,8 @@ A->B: <disconnect>
 The proxy has a reporting features like:
 
 - Reporting stats in JSON format to stdout when sending `SIGUSR2` signal to the process.
-- Reporting stats in JSON format over HTTP "/stats" or "/metrics.
-- Health check over HTTP "/health" or "/status".
+- Reporting stats in JSON format over HTTP `/stats` or `/metrics`.
+- Health check over HTTP `/health` or `/status`.
 - Data recovery after failure using a sliding window of `10s` time frame.
 
 ##### JSON Sample Response
