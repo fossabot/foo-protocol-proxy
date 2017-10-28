@@ -78,7 +78,7 @@ func (p *Proxy) recoverData() {
 	data, err := p.saver.Read()
 
 	if err != nil && err != io.EOF {
-		log.Fatal(err)
+		p.errorChan <- err
 	}
 
 	recovery := persistence.NewEmptyRecovery()
@@ -95,7 +95,7 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 		serverConn, err := p.forward()
 
 		if err != nil {
-			log.Fatal(err)
+			p.errorChan <- err
 			os.Exit(1)
 		}
 
@@ -143,7 +143,7 @@ func (p *Proxy) persistData() {
 	data, err := r.Marshal()
 
 	if err != nil {
-		log.Fatal(err)
+		p.errorChan <- err
 	}
 
 	p.saver.Save(data)
@@ -167,16 +167,18 @@ func (p *Proxy) monitorErrors() {
 	for {
 		select {
 		case err := <-p.errorChan:
-			if err != nil {
-				log.Fatal(err)
+			if err != nil && err != io.EOF {
+				log.Println(err)
 			}
 		}
 	}
 }
 
-func (p *Proxy) close() {
+// Close closes the proxy, and its related channels.
+func (p *Proxy) Close() {
 	close(p.clientConnChan)
 	close(p.signalChan)
+	close(p.errorChan)
 	p.saver.Close()
 	p.milliTicker.Stop()
 	p.oneSecTicker.Stop()

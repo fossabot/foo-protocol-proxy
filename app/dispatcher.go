@@ -1,7 +1,6 @@
 package app
 
 import (
-	"flag"
 	"fmt"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
@@ -15,17 +14,25 @@ import (
 type (
 	// Dispatcher acts as en entry point for the application.
 	Dispatcher struct {
-		proxy *Proxy
+		config   config.Configuration
+		analyzer *analysis.Analyzer
+		saver    *persistence.Saver
+		proxy    *Proxy
 	}
 )
 
+// NewDispatcher allocates and returns a new Dispatcher.
+func NewDispatcher(config config.Configuration, analyzer *analysis.Analyzer, saver *persistence.Saver) *Dispatcher {
+	return &Dispatcher{
+		config:   config,
+		analyzer: analyzer,
+		saver:    saver,
+	}
+}
+
 // Run starts the dispatcher.
 func (d *Dispatcher) Run() {
-	config := d.parseConfig()
-	analyzer := analysis.NewAnalyzer()
-	saver := persistence.NewSaver(config.RecoveryPath)
-
-	d.proxy = NewProxy(config, analyzer, saver)
+	d.proxy = NewProxy(d.config, d.analyzer, d.saver)
 	err := d.proxy.Start()
 
 	if err != nil {
@@ -33,30 +40,23 @@ func (d *Dispatcher) Run() {
 		os.Exit(1)
 	}
 
-	NewHTTPServer(config, analyzer).Start()
+	NewHTTPServer(d.config, d.analyzer).Start()
 
-	d.blockIndefinitely()
-}
-
-func (d *Dispatcher) parseConfig() config.Configuration {
-	var (
-		listen       = flag.String("listen", ":8002", "Listening port.")
-		forward      = flag.String("forward", ":8001", "Forwarding port.")
-		httpAddr     = flag.String("http", "0.0.0.0:8088", "Health service address.")
-		recoveryPath = flag.String("recovery-path", "data/recovery.json", "Recovery path.")
-	)
-	flag.Parse()
-
-	return config.Configuration{
-		Listening:    *listen,
-		Forwarding:   *forward,
-		HTTPAddress:  *httpAddr,
-		RecoveryPath: *recoveryPath,
+	if d.blockIndefinitely(make(chan os.Signal, 1), true) {
+		d.Close()
 	}
 }
 
-func (d *Dispatcher) blockIndefinitely() {
-	signalChan := make(chan os.Signal, 1)
+// Close closes the dispatcher and its dependencies.
+func (d *Dispatcher) Close() {
+	if d.proxy != nil {
+		d.proxy.Close()
+	}
+	os.Exit(0)
+}
+
+// blockIndefinitely blocks for interrupt signal from the OS.
+func (d *Dispatcher) blockIndefinitely(signalChan chan os.Signal, breakOnSignal bool) bool {
 	signal.Notify(signalChan,
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -66,9 +66,11 @@ func (d *Dispatcher) blockIndefinitely() {
 	for {
 		select {
 		case s := <-signalChan:
-			d.proxy.close()
 			log.Println(fmt.Sprintf("Captured %v. Exiting...", s))
-			os.Exit(0)
+
+			if breakOnSignal {
+				return true
+			}
 		}
 	}
 }

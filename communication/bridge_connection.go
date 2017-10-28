@@ -44,30 +44,50 @@ func (b *BridgeConnection) Bind() {
 }
 
 func (b *BridgeConnection) pipe(src, dst *bufio.Reader) {
+	callback := func(data string) {
+		// Updating analysis channel with the written data.
+		b.analysisChan <- data
+	}
+
 	go func() {
+		var err error
+
 		for {
-			b.copyWait(src, b.dstConn, b.errChan)
-			b.copyWait(dst, b.srcConn, b.errChan)
+			err = b.copyWait(src, b.dstConn, callback)
+
+			if err != nil {
+				break
+			}
+
+			err = b.copyWait(dst, b.srcConn, callback)
+
+			if err != nil {
+				break
+			}
 		}
+
+		if err != nil {
+			b.errChan <- err
+		}
+
+		b.errChan <- b.close()
 	}()
 }
 
-func (b *BridgeConnection) copyWait(src *bufio.Reader, dst net.Conn, errChan chan error) {
+func (b *BridgeConnection) copyWait(src *bufio.Reader, dst net.Conn, callback func(string)) error {
 	data, err := b.read(src)
 
 	if err != nil {
-		errChan <- err
-		errChan <- b.close()
-		return
+		return err
 	}
 
-	_, err = b.write(dst, []byte(data))
+	_, err = b.write(dst, []byte(data), callback)
 
 	if err != nil {
-		errChan <- err
-		errChan <- b.close()
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (b *BridgeConnection) read(src *bufio.Reader) ([]byte, error) {
@@ -80,9 +100,8 @@ func (b *BridgeConnection) read(src *bufio.Reader) ([]byte, error) {
 	return []byte(data), err
 }
 
-func (b *BridgeConnection) write(dst net.Conn, data []byte) (int, error) {
-	// Updating analysis channel with the written data.
-	b.analysisChan <- string(data)
+func (b *BridgeConnection) write(dst net.Conn, data []byte, callback func(string)) (int, error) {
+	callback(string(data))
 
 	return dst.Write(data)
 }

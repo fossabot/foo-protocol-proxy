@@ -74,8 +74,8 @@ A->B: <disconnect>
 The proxy has a reporting features like:
 
 - Reporting stats in JSON format to stdout when sending `SIGUSR2` signal to the process.
-- Reporting stats in JSON format over HTTP `/stats` or `/metrics`.
-- Health check over HTTP `/health` or `/status`.
+- Reporting stats in JSON format over HTTP [`/stats`][16] or [`/metrics`][17].
+- Health check over HTTP [`/health`][18] or [`/status`][19].
 - Data recovery after failure using a sliding window of `10s` time frame.
 
 ##### JSON Sample Response
@@ -110,7 +110,7 @@ You can use the following steps as a testing procedure
 
   * **Server**
     ```bash
-    $ bin/server-linux -listen ":8001"
+    $ bin/server-$(uname -s | tr '[:upper:]' '[:lower:]') -listen ":8001"
     ```
 
   * **Proxy**
@@ -119,8 +119,14 @@ You can use the following steps as a testing procedure
         Running proxy on the host directly.
         
         ```bash
-        $ make build
-        $ bin/foo-protocol-proxy-{OS}-{ARCH} -forward "{FORWARDING_PORT}" -listen "{LISTENING_PORT}" -http "{HTTP_ADDRESS}" -recovery-path "{RECOVERY_PATH}"
+        $ make help
+          export ARCH=amd64
+          export FORWARDING_PORT=":8001"
+          export LISTENING_PORT=":8002"
+          export HTTP_ADDRESS="0.0.0.0:8088"
+          export RECOVERY_PATH="data/recovery.json"
+          export ARGS="-forward $FORWARDING_PORT -listen $LISTENING_PORT -http $HTTP_ADDRESS -recovery-path $RECOVERY_PATH"
+          make run args=$ARGS
         ```
         
         **`Environment`**:
@@ -128,8 +134,8 @@ You can use the following steps as a testing procedure
         + `ARCH` - the current system architecture, e.g. (amd64, 386)
             
         **`Params`**:           
-        + `FORWARDING_PORT` - e.g. `":8081"`
-        + `LISTENING_PORT` - e.g. `":8082"`
+        + `FORWARDING_PORT` - e.g. `":8001"`
+        + `LISTENING_PORT` - e.g. `":8002"`
         + `HTTP_ADDRESS` - e.g. `"0.0.0.0:8088"`
         + `RECOVERY_PATH` - e.g. `"data/recovery.json"`
         
@@ -137,36 +143,46 @@ You can use the following steps as a testing procedure
                   
         ```bash
         # Process name: foo-protocol-proxy-{OS}-{ARCH}
-        # For linux, and amd64, it would be as following:
-        $ kill -SIGUSR2 $(pidof foo-protocol-proxy-linux-amd64) > /dev/null 2>&1
+        # For darwin, and amd64, it would be as "foo-protocol-proxy-darwin-amd64".
+        $ export OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          pkill -SIGUSR2 foo-protocol-proxy-${OS}-amd64 > /dev/null 2>&1
         ```
                    
     - Docker Approach
        
-       Running proxy through docker container.
+       Running proxy through docker container. currently Linux only works fine.
        
        ```bash
-       $ bash deploy.sh -f "{FORWARDING_PORT}" -l "{LISTENING_PORT}" -h "{HTTP_ADDRESS}" -r "{RECOVERY_PATH}"
+       $ export FOO_PROXY_TAG=`git describe --abbrev=0`
+         export FORWARDING_PORT=8001
+         export LISTENING_PORT=8002
+         export HTTP_ADDRESS=8088
+         export RECOVERY_PATH="data/recovery.json"
+         export ARGS="-f $FORWARDING_PORT -l $LISTENING_PORT -h $HTTP_ADDRESS -r $RECOVERY_PATH -t $FOO_PROXY_TAG"
+         make deploy args=$ARGS
        ```
         
        **`Params`**:
-       + `f` - e.g. `8081`
-       + `l` - e.g. `8082`
+       + `f` - e.g. `8001`
+       + `l` - e.g. `8002`
        + `h` - e.g. `8088`
        + `r` - e.g. `"data/recovery.json"`
+       + `t` - e.g. `"0.0.1"`
        
        **Sending `SIGUSR2` Signal**
          
        ```bash
-       $ docker exec -it foo-proxy-0.0.1 pkill -SIGUSR2 foo-protocol-proxy > /dev/null 2>&1
-       $ docker logs -f foo-proxy-0.0.1
+       $ export FOO_PROXY_TAG=`git describe --abbrev=0`
+         docker exec -it foo-proxy-${FOO_PROXY_TAG} pkill -SIGUSR2 foo-protocol-proxy > /dev/null 2>&1
+         docker logs -f foo-proxy-${FOO_PROXY_TAG}
        ```
        
   * **Multiple Client Connections**
     ```bash
-    $ for i in {0..1000..1}
+    $ export OS=`uname -s | tr '[:upper:]' '[:lower:]'`
+      for i in {0..1000}
       do 
-         bin/client-linux -connect "localhost:8002";
+         bin/client-${OS} -connect "localhost:8002";
       done
     ```
 
@@ -180,18 +196,18 @@ $ make unit
 
 ## Coding - __Structure & Design__
 
-| Item                    | Description                                                                                                                     |
-| :---:                   | :---                                                                                                                            |
-| [`Dispatcher`][6]       | parses configuration, builds configuration object, and passes it to the proxy.                                                  |
-| [`Proxy`][7]            | orchestrates the interactions between the components.                                                                           |
-| [`Listner`][8]          | awaits for client connections, and on every new connection, a `BridgeConnection` instance is created.                           |
-| [`BridgeConnection`][9] | acts as Bi-directional communication object, that passes data forward and backward to the server.                               |
-| [`Analyzer`][10]        | perform `analysis` by sniffing all the data read and written from the server.                                                   |
-| [`Stats`][11]           | wraps stats data the would be flushed to stdout upon request.                                                                   |
-| [`TimeTable`][12]       | contains snapshot of aggregated number of requests/responses at specific timestamp.                                             |
-| [`Saver`][13]           | handles reading/writing data.                                                                                                   |
-| [`Recovery`][14]        | handles storing/retrieval of backup data.                                                                                       |
-| [`HTTPServer`][15]      | reports metrics/stats over HTTP using the path `/metrics` or `/stats`, also used for health check using `/health` or `/status`. |
+| Item                    | Description                                                                                                                                              |
+| :---:                   | :---                                                                                                                                                     |
+| [`Dispatcher`][6]       | parses configuration, builds configuration object, and passes it to the proxy.                                                                           |
+| [`Proxy`][7]            | orchestrates the interactions between the components.                                                                                                    |
+| [`Listner`][8]          | awaits for client connections, and on every new connection, a `BridgeConnection` instance is created.                                                    |
+| [`BridgeConnection`][9] | acts as Bi-directional communication object, that passes data forward and backward to the server.                                                        |
+| [`Analyzer`][10]        | perform `analysis` by sniffing all the data read and written from the server.                                                                            |
+| [`Stats`][11]           | wraps stats data the would be flushed to stdout upon request.                                                                                            |
+| [`TimeTable`][12]       | contains snapshot of aggregated number of requests/responses at specific timestamp.                                                                      |
+| [`Saver`][13]           | handles reading/writing data.                                                                                                                            |
+| [`Recovery`][14]        | handles storing/retrieval of backup data.                                                                                                                |
+| [`HTTPServer`][15]      | reports metrics/stats over HTTP using the path [`/stats`][16] or [`/mertrics`][17], also used for health check using [`/health`][18] or [`/status`][19]. |
 
 ## Todo
    - Resource pooling for connections, to enable reuse of a limited number of open connections with the server,
@@ -217,3 +233,7 @@ Enjoy!
 [13]: https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy/persistence#Saver "Saver"
 [14]: https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy/persistence#Recovery "Recovery"
 [15]: https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy/app#HttpServer "HttpServer"
+[16]: http://localhost:8088/stats "Stats" 
+[17]: http://localhost:8088/metrics "Metrics" 
+[18]: http://localhost:8088/health "Health" 
+[19]: http://localhost:8088/status "Status" 

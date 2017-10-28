@@ -28,7 +28,8 @@ func NewHTTPServer(config config.Configuration, analyzer *analysis.Analyzer) *HT
 
 // Start initiates routes configuration, and starts listening.
 func (s *HTTPServer) Start() {
-	s.configureRoutes()
+	routes := s.getRoutes()
+	s.configureRoutes(routes)
 
 	go func() {
 		s.errorChan <- http.ListenAndServe(s.config.HTTPAddress, nil)
@@ -36,31 +37,19 @@ func (s *HTTPServer) Start() {
 	go s.monitorErrors()
 }
 
-func (s *HTTPServer) configureRoutes() {
-	routes := []string{
-		"/metrics",
-		"/stats",
-		"/health",
-		"/status",
-	}
-
-	for _, route := range routes {
-		http.Handle(route, s.getHandler(route))
+func (s *HTTPServer) configureRoutes(routes map[string]http.Handler) {
+	for route, handler := range routes {
+		http.Handle(route, handler)
 	}
 }
 
-func (s *HTTPServer) getHandler(route string) http.Handler {
-	var handler http.Handler
-
-	switch route {
-	case "/metrics", "/stats":
-		handler = handlers.NewMetricsHandler(s.analyzer)
-
-	case "/health", "/status":
-		handler = handlers.NewHealthHandler()
+func (s *HTTPServer) getRoutes() map[string]http.Handler {
+	return map[string]http.Handler{
+		"/metrics": handlers.NewMetricsHandler(s.analyzer),
+		"/stats":   handlers.NewMetricsHandler(s.analyzer),
+		"/health":  handlers.NewHealthHandler(),
+		"/status":  handlers.NewHealthHandler(),
 	}
-
-	return handler
 }
 
 func (s *HTTPServer) monitorErrors() {
