@@ -1,35 +1,42 @@
 #!/usr/bin/env bash
 
-PREFIX="weaveworks"
-TAG=`git describe --abbrev=0`
+IMAGE_PREFIX="ahmedkamal"
+REGISTRY_REPO="foo-protocol-proxy"
+IMAGE_TAG=$(git describe --abbrev=0 | sed 's/^v\(.*\)$/\1/' 2>/dev/null)
 FORWARDING_PORT=8001
 LISTENING_PORT=8002
 HTTP_PORT=8088
 RECOVERY_PATH="data/recovery.json"
 
-while getopts "f:l:h:r:" name
+while getopts "f:l:h:r:p:t:" name
 do
     case $name in
     f)  FORWARDING_PORT="$OPTARG";;
     l)  LISTENING_PORT="$OPTARG";;
     h)  HTTP_PORT="$OPTARG";;
     r)  RECOVERY_PATH="$OPTARG";;
-    t)  TAG="$OPTARG";;
-    ?)  printf "Usage: %f: [-f forwarding port]\n" $0
+    p)  IMAGE_PREFIX="$OPTARG";;
+    t)  IMAGE_TAG="$OPTARG";;
+    ?)  printf "Usage: %f: [-f forwarding port] [-l listening port] [-h http address] [-r recovery path] [-p image prefix] [-t image tag]\n" $0
           exit 2;;
     esac
 done
 
-export PREFIX="$PREFIX"
-export TAG="$TAG"
+if [[ $IMAGE_PREFIX == '' ]]; then
+    IMAGE_PREFIX="ahmedkamal"
+fi
+
+if [[ $IMAGE_TAG == '' ]]; then
+    IMAGE_TAG="dev"
+fi
+
+export IMAGE_PREFIX="$IMAGE_PREFIX"
+export REGISTRY_REPO="$REGISTRY_REPO"
+export IMAGE_TAG="$IMAGE_TAG"
 export FORWARDING_PORT="$FORWARDING_PORT"
 export LISTENING_PORT="$LISTENING_PORT"
 export HTTP_PORT="$HTTP_PORT"
 export RECOVERY_PATH="$RECOVERY_PATH"
-
-if [[ $TAG == '' ]]; then
-    TAG="dev"
-fi
 
 # Gets the current platform.
 getPlatform() {

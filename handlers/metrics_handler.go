@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
-	"log"
 	"net/http"
 )
 
@@ -23,13 +23,13 @@ func NewMetricsHandler(analyzer *analysis.Analyzer) http.Handler {
 func (m *MetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 
-	if contentType != "" {
+	if contentType == "" {
 		contentType = "application/json"
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
 	//w.Header().Set("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
 	//w.Header().Set("Access-Control-Allow-Credentials", "true")
 	//w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
@@ -38,7 +38,7 @@ func (m *MetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data, err := m.analyzer.Report()
 
 	if err != nil {
-		log.Fatal(err)
+		w.Write([]byte(fmt.Sprintf("{error: %s}", err.Error())))
 	}
 
 	w.Write([]byte(data))

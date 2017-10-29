@@ -6,6 +6,7 @@ Foo Protocol Proxy
 [![Build Status](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy  "Build Status")
 [![Go Report Card](https://goreportcard.com/badge/github.com/ahmedkamals/foo-protocol-proxy)](https://goreportcard.com/report/github.com/ahmedkamals/foo-protocol-proxy  "Go Report Card")
 [![GoDoc](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy?status.svg)](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy "API Documentation")
+[![Docker Pulls](https://img.shields.io/docker/pulls/ahmedkamal/foo-protocol-proxy.svg?maxAge=604800)](https://hub.docker.com/r/ahmedkamal/foo-protocol-proxy/ "Docker Pulls")
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](LICENSE  "License")
 [![Join the chat at https://gitter.im/ahmedkamals/foo-protocol-proxy](https://badges.gitter.im/ahmedkamals/foo-protocol-proxy.svg)](https://gitter.im/ahmedkamals/foo-protocol-proxy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge "Let's discuss")
 
@@ -153,12 +154,13 @@ You can use the following steps as a testing procedure
        Running proxy through docker container. currently Linux only works fine.
        
        ```bash
-       $ export FOO_PROXY_TAG=`git describe --abbrev=0`
+       $ export IMAGE_PREFIX="ahmedkamal"
+         export IMAGE_TAG=$(git describe --abbrev=0 | cut -d "v" -f 2 2> /dev/null)
          export FORWARDING_PORT=8001
          export LISTENING_PORT=8002
          export HTTP_ADDRESS=8088
          export RECOVERY_PATH="data/recovery.json"
-         export ARGS="-f $FORWARDING_PORT -l $LISTENING_PORT -h $HTTP_ADDRESS -r $RECOVERY_PATH -t $FOO_PROXY_TAG"
+         export ARGS="-f $FORWARDING_PORT -l $LISTENING_PORT -h $HTTP_ADDRESS -r $RECOVERY_PATH -p $IMAGE_PREFIX -t $IMAGE_TAG"
          make deploy args=$ARGS
        ```
         
@@ -167,14 +169,15 @@ You can use the following steps as a testing procedure
        + `l` - e.g. `8002`
        + `h` - e.g. `8088`
        + `r` - e.g. `"data/recovery.json"`
+       + `p` - e.g. `"ahmedkamal"`
        + `t` - e.g. `"0.0.1"`
        
        **Sending `SIGUSR2` Signal**
          
        ```bash
-       $ export FOO_PROXY_TAG=`git describe --abbrev=0`
-         docker exec -it foo-proxy-${FOO_PROXY_TAG} pkill -SIGUSR2 foo-protocol-proxy > /dev/null 2>&1
-         docker logs -f foo-proxy-${FOO_PROXY_TAG}
+       $ export IMAGE_TAG=$(git describe --abbrev=0 | cut -d "v" -f 2 2> /dev/null)
+         docker exec -it foo-proxy-${IMAGE_TAG} pkill -SIGUSR2 foo-protocol-proxy > /dev/null 2>&1
+         docker logs -f foo-proxy-${IMAGE_TAG}
        ```
        
   * **Multiple Client Connections**
@@ -191,7 +194,7 @@ You can use the following steps as a testing procedure
 Not all items covered, just made one example.
     
 ```bash
-$ make unit
+$ make test
 ```
 
 ## Coding - __Structure & Design__

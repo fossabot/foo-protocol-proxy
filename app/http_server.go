@@ -1,10 +1,9 @@
 package app
 
 import (
+	"errors"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/handlers"
-	"log"
 	"net/http"
 )
 
@@ -12,53 +11,59 @@ type (
 	// HTTPServer is an interface for handling HTTP connections.
 	HTTPServer struct {
 		config    config.Configuration
+		routes    map[string]http.Handler
+		server    *http.Server
 		analyzer  *analysis.Analyzer
 		errorChan chan error
 	}
 )
 
 // NewHTTPServer allocates and returns a new HTTPServer to handle HTTP connections.
-func NewHTTPServer(config config.Configuration, analyzer *analysis.Analyzer) *HTTPServer {
+func NewHTTPServer(
+	config config.Configuration,
+	routes map[string]http.Handler,
+	errorChan chan error,
+) *HTTPServer {
 	return &HTTPServer{
 		config:    config,
-		analyzer:  analyzer,
-		errorChan: make(chan error, 10),
+		routes:    routes,
+		server:    &http.Server{Addr: config.HTTPAddress},
+		errorChan: errorChan,
 	}
 }
 
 // Start initiates routes configuration, and starts listening.
-func (s *HTTPServer) Start() {
-	routes := s.getRoutes()
-	s.configureRoutes(routes)
+func (s *HTTPServer) Start() error {
+	mux, err := s.configureRoutesHandler(s.routes)
 
-	go func() {
-		s.errorChan <- http.ListenAndServe(s.config.HTTPAddress, nil)
-	}()
-	go s.monitorErrors()
+	if err != nil {
+		return err
+	}
+
+	s.server.Handler = mux
+
+	return s.server.ListenAndServe()
 }
 
-func (s *HTTPServer) configureRoutes(routes map[string]http.Handler) {
-	for route, handler := range routes {
-		http.Handle(route, handler)
+func (s *HTTPServer) configureRoutesHandler(routes map[string]http.Handler) (*http.ServeMux, error) {
+	if len(routes) == 0 {
+		return nil, errors.New("missing routes")
 	}
+	mux := http.NewServeMux()
+
+	for route, handler := range routes {
+		mux.Handle(route, handler)
+	}
+
+	return mux, nil
 }
 
 func (s *HTTPServer) getRoutes() map[string]http.Handler {
-	return map[string]http.Handler{
-		"/metrics": handlers.NewMetricsHandler(s.analyzer),
-		"/stats":   handlers.NewMetricsHandler(s.analyzer),
-		"/health":  handlers.NewHealthHandler(),
-		"/status":  handlers.NewHealthHandler(),
-	}
+	return s.routes
 }
 
-func (s *HTTPServer) monitorErrors() {
-	for {
-		select {
-		case err := <-s.errorChan:
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
+// Close immediately closes all active net.Listeners and any
+// connections in state StateNew, StateActive, or StateIdle.
+func (s *HTTPServer) Close() error {
+	return s.server.Close()
 }
