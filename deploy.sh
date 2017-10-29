@@ -1,7 +1,7 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 PREFIX="weaveworks"
-TAG="0.0.1"
+TAG=`git describe --abbrev=0`
 FORWARDING_PORT=8001
 LISTENING_PORT=8002
 HTTP_PORT=8088
@@ -14,6 +14,7 @@ do
     l)  LISTENING_PORT="$OPTARG";;
     h)  HTTP_PORT="$OPTARG";;
     r)  RECOVERY_PATH="$OPTARG";;
+    t)  TAG="$OPTARG";;
     ?)  printf "Usage: %f: [-f forwarding port]\n" $0
           exit 2;;
     esac
@@ -26,9 +27,13 @@ export LISTENING_PORT="$LISTENING_PORT"
 export HTTP_PORT="$HTTP_PORT"
 export RECOVERY_PATH="$RECOVERY_PATH"
 
+if [[ $TAG == '' ]]; then
+    TAG="dev"
+fi
+
 # Gets the current platform.
 getPlatform() {
-  echo $(uname -s)
+  echo $(uname -s | tr '[:upper:]' '[:lower:]')
 }
 
 # Should an ip alias used based on the platform.
@@ -36,7 +41,7 @@ shouldUseIpAlias() {
   local platform=$1
   if [[ $platform == 'linux' ]]; then
      return 1
-  elif [[ $platform == 'Darwin' ]]; then
+  elif [[ $platform == 'darwin' ]]; then
      return 0
   fi
 

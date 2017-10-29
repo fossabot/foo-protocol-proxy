@@ -11,6 +11,7 @@ import (
 )
 
 func TestShouldStartProperly(t *testing.T) {
+	t.Parallel()
 	listener, err := getMockedListener(":8010")
 
 	if err != nil {
@@ -33,20 +34,20 @@ func TestShouldStartProperly(t *testing.T) {
 		{
 			ID:       "Connection forwarding",
 			Input:    proxy,
-			Expected: "",
+			Expected: "*net.TCPConn",
 		},
 	}
 
 	for _, testCase := range testCases {
 		input := testCase.Input.(*Proxy)
-		//expected := testCase.Expected
+		expected := testCase.Expected.(string)
 		actual, err := input.forward()
 
 		if err != nil {
 			t.Error(err)
 		}
 
-		if reflect.TypeOf(actual).String() != "*net.TCPConn" {
+		if reflect.TypeOf(actual).String() != expected {
 			t.Error(testCase.Format(actual))
 		}
 	}

@@ -14,5 +14,7 @@
 .glide/
 
 .idea/
-bin/foo-protocol-proxy*
+coverage/
+bin/foo*
 data/
+*.log

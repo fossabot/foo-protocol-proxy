@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"log"
+	"errors"
 	"os"
 	"path"
 )
@@ -15,22 +15,30 @@ type (
 
 // NewSaver allocates and returns a new Saver.
 func NewSaver(filePath string) *Saver {
-	path := path.Dir(filePath)
-	_, err := os.Stat(path)
-
-	if os.IsNotExist(err) {
-		os.Mkdir(path, 0755)
-	}
-
-	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
+	file, err := createFile(filePath)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil
 	}
 
 	return &Saver{
 		file: file,
 	}
+}
+
+// createFile creates file, and returns error in case of any.
+func createFile(filePath string) (*os.File, error) {
+	if filePath == "" {
+		return nil, errors.New("saver: File path should not be empty")
+	}
+	dirPath := path.Dir(filePath)
+	_, err := os.Stat(dirPath)
+
+	if os.IsNotExist(err) {
+		os.Mkdir(dirPath, 0755)
+	}
+
+	return os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
 }
 
 // Read reads and returns saved data.
