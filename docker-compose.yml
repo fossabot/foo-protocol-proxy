@@ -2,8 +2,8 @@ version: '2.0'
 
 services:
   Proxy:
-    container_name: foo-proxy-$TAG
-    image: "$PREFIX/foo-proxy:$TAG"
+    container_name: $REGISTRY_REPO-$IMAGE_TAG
+    image: "$IMAGE_PREFIX/$REGISTRY_REPO:$IMAGE_TAG"
     cpu_shares: 100
     mem_limit: 500M
     build:

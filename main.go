@@ -24,7 +24,7 @@ func main() {
 	))
 	config := parseConfig()
 	dispatcher := app.NewDispatcher(config, analysis.NewAnalyzer(), persistence.NewSaver(config.RecoveryPath))
-	dispatcher.Run()
+	dispatcher.Start()
 }
 
 func parseConfig() config.Configuration {

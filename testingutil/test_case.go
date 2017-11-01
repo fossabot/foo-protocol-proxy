@@ -5,9 +5,10 @@ import "fmt"
 type (
 	// TestCase wraps test case information.
 	TestCase struct {
-		ID       string
-		Input    interface{}
-		Expected interface{}
+		ID           string
+		Input        interface{}
+		Expected     interface{}
+		ExpectsError bool
 	}
 )
 

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/handlers"
 	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,25 +16,28 @@ import (
 type (
 	// Dispatcher acts as en entry point for the application.
 	Dispatcher struct {
-		config   config.Configuration
-		analyzer *analysis.Analyzer
-		saver    *persistence.Saver
-		proxy    *Proxy
+		config     config.Configuration
+		proxy      *Proxy
+		httpServer *HTTPServer
+		analyzer   *analysis.Analyzer
+		saver      *persistence.Saver
+		errorChan  chan error
 	}
 )
 
 // NewDispatcher allocates and returns a new Dispatcher.
 func NewDispatcher(config config.Configuration, analyzer *analysis.Analyzer, saver *persistence.Saver) *Dispatcher {
 	return &Dispatcher{
-		config:   config,
-		analyzer: analyzer,
-		saver:    saver,
+		config:    config,
+		analyzer:  analyzer,
+		saver:     saver,
+		errorChan: make(chan error, 10),
 	}
 }
 
-// Run starts the dispatcher.
-func (d *Dispatcher) Run() {
-	d.proxy = NewProxy(d.config, d.analyzer, d.saver)
+// Start starts the dispatcher.
+func (d *Dispatcher) Start() {
+	d.proxy = NewProxy(d.config, d.analyzer, d.saver, d.errorChan)
 	err := d.proxy.Start()
 
 	if err != nil {
@@ -40,7 +45,11 @@ func (d *Dispatcher) Run() {
 		os.Exit(1)
 	}
 
-	NewHTTPServer(d.config, d.analyzer).Start()
+	d.httpServer = NewHTTPServer(d.config, d.getRoutes(), d.errorChan)
+
+	go func() {
+		d.errorChan <- d.httpServer.Start()
+	}()
 
 	if d.blockIndefinitely(make(chan os.Signal, 1), true) {
 		d.Close()
@@ -51,8 +60,8 @@ func (d *Dispatcher) Run() {
 func (d *Dispatcher) Close() {
 	if d.proxy != nil {
 		d.proxy.Close()
+		d.httpServer.Close()
 	}
-	os.Exit(0)
 }
 
 // blockIndefinitely blocks for interrupt signal from the OS.
@@ -72,5 +81,14 @@ func (d *Dispatcher) blockIndefinitely(signalChan chan os.Signal, breakOnSignal 
 				return true
 			}
 		}
+	}
+}
+
+func (d *Dispatcher) getRoutes() map[string]http.Handler {
+	return map[string]http.Handler{
+		"/metrics": handlers.NewMetricsHandler(d.analyzer),
+		"/stats":   handlers.NewMetricsHandler(d.analyzer),
+		"/health":  handlers.NewHealthHandler(),
+		"/status":  handlers.NewHealthHandler(),
 	}
 }

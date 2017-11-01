@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
 	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
@@ -20,15 +21,12 @@ func TestShouldStartProperly(t *testing.T) {
 
 	go listener.Accept()
 
-	proxy := NewProxy(config.Configuration{
+	proxy := getProxy(config.Configuration{
 		Forwarding:   ":8010",
 		Listening:    ":8011",
 		HTTPAddress:  "0.0.0.0:8001",
 		RecoveryPath: "data/recovery.json",
-	},
-		getMockedAnalyzer(),
-		getMockedSaver(),
-	)
+	})
 
 	testCases := []testingutil.TestCase{
 		{
@@ -36,23 +34,38 @@ func TestShouldStartProperly(t *testing.T) {
 			Input:    proxy,
 			Expected: "*net.TCPConn",
 		},
+		{
+			ID:           "Connection forwarding - should return error",
+			Input:        getProxy(config.Configuration{}),
+			Expected:     errors.New(""),
+			ExpectsError: true,
+		},
 	}
 
 	for _, testCase := range testCases {
 		input := testCase.Input.(*Proxy)
-		expected := testCase.Expected.(string)
 		actual, err := input.forward()
 
-		if err != nil {
-			t.Error(err)
-		}
+		if !testCase.ExpectsError {
+			expected := testCase.Expected.(string)
 
-		if reflect.TypeOf(actual).String() != expected {
-			t.Error(testCase.Format(actual))
+			if reflect.TypeOf(actual).String() != expected {
+				t.Error(testCase.Format(actual))
+			}
+		} else if err == nil {
+			t.Error(testCase.Format("There should be an error"))
 		}
 	}
 
 	listener.Close()
+}
+
+func getProxy(config config.Configuration) *Proxy {
+	return NewProxy(config,
+		getMockedAnalyzer(),
+		getMockedSaver(),
+		make(chan error, 10),
+	)
 }
 
 func getMockedListener(listeningPort string) (net.Listener, error) {

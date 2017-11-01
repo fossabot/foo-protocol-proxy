@@ -35,13 +35,14 @@ func NewProxy(
 	config config.Configuration,
 	analyzer *analysis.Analyzer,
 	saver *persistence.Saver,
+	errorChan chan error,
 ) *Proxy {
 	return &Proxy{
 		config:         config,
 		clientConnChan: make(chan net.Conn),
 		analyzer:       analyzer,
 		signalChan:     make(chan os.Signal, 1),
-		errorChan:      make(chan error, 10),
+		errorChan:      errorChan,
 		milliTicker:    time.NewTicker(time.Millisecond),
 		oneSecTicker:   time.NewTicker(time.Second),
 		saver:          saver,
@@ -77,8 +78,9 @@ func (p *Proxy) Start() error {
 func (p *Proxy) recoverData() {
 	data, err := p.saver.Read()
 
-	if err != nil && err != io.EOF {
+	if err != nil {
 		p.errorChan <- err
+		return
 	}
 
 	recovery := persistence.NewEmptyRecovery()
