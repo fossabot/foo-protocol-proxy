@@ -50,10 +50,10 @@ GO_LINKER_FLAGS ?=-ldflags \
 	$(EXTLD_FLAGS) \
 	-X "main.version=$(BUILD_VERSION)" \
 	-X "${PACKAGE_BASE}/version.BuildHash=$(BUILD_HASH)" \
-    -X "${PACKAGE_BASE}/core.BuildTime=$(BUILD_TIME)" \
-    -X "${PACKAGE_BASE}/core.GitCommit=$(GIT_BRANCH)+$(GIT_COMMIT)$(GIT_DIRTY)"'
+	-X "${PACKAGE_BASE}/core.BuildTime=$(BUILD_TIME)" \
+	-X "${PACKAGE_BASE}/core.GitCommit=$(GIT_BRANCH)+$(GIT_COMMIT)$(GIT_DIRTY)"'
 
-BUILD_FLAGS ?=$(GO_BUILD_FLAGS) -tags $(TAGS) $(GO_LINKER_FLAGS)
+BUILD_FLAGS ?=$(GO_BUILD_FLAGS) -tags $(TAGS) $(GO_LINKER_FLAGS) $(GO_FLAGS)
 
 PACKAGE_BASE = $(shell $(GO) list -e ./)
 PKGS = $(shell $(GO) list ./... | grep -v /vendor/)
@@ -64,7 +64,7 @@ TARGET_BINARY := $(BINARY_BASE)-$(GO_OS)-$(GO_ARCH)
 
 # To disable root, you can do "make SUDO="
 SUDO := $(shell echo "sudo -E")
-DOCKER := $(SUDO) docker
+DOCKER := $(shell docker info > /dev/null 2>&1 || $(SUDO)) docker
 
 all: setup generate install test coverage-web verify format clean nuke build deploy run
 
@@ -109,21 +109,20 @@ generate:
 setup:
 	@echo "$(OK_COLOR)$(MSG_PREFIX) Installing required components...$(NO_COLOR)"
 	@$(GO) get -u $(GO_FLAGS) golang.org/x/tools/cmd/cover \
-	github.com/golang/lint/golint
+		github.com/golang/lint/golint
 
 install:
 	@echo "$(OK_COLOR)$(MSG_PREFIX) Installing packages into GOPATH...$(NO_COLOR)"
 	@$(GO) install $(GO_FLAGS) -tags $(TAGS) $(PKGS)
 
-build: install \
-    verify
+build: install
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Building binary...$(NO_COLOR)"
 	for GO_OS in $(OSs); do \
 		for GO_ARCH in $(ARCHS); do \
-		    TARGET_BINARY=$(BINARY_BASE)-$$GO_OS-$$GO_ARCH; \
-        	echo "$(INFO_COLOR) $(ENV_FLAGS) $(GO) build -o $$TARGET_BINARY $(BUILD_FLAGS) . $(NO_COLOR)\n"; \
-        	env GOOS=$$GO_OS GOARCH=$$GO_ARCH \
-            $(ENV_FLAGS) $(GO) build -o $$TARGET_BINARY $(BUILD_FLAGS) .; \
+			TARGET_BINARY=$(BINARY_BASE)-$$GO_OS-$$GO_ARCH; \
+			echo "$(INFO_COLOR) $(ENV_FLAGS) $(GO) build -o $$TARGET_BINARY $(BUILD_FLAGS) . $(NO_COLOR)\n"; \
+			env GOOS=$$GO_OS GOARCH=$$GO_ARCH \
+			$(ENV_FLAGS) $(GO) build -o $$TARGET_BINARY $(BUILD_FLAGS) .; \
 		done; \
 	done
 
@@ -159,7 +158,6 @@ coverage-web:
 	@if [ ! -d $(COVERAGE_PATH) ] ; then $(MAKE) $(COVERAGE_PATH) ; fi
 	$(GO) tool cover -html=$(COVERAGE_PROFILE) -o $(COVERAGE_HTML) $(GO_FLAGS)
 
-#@if [ ! -d $(COVERAGE_PATH) ] ; then mkdir -p $(COVERAGE_PATH) ; fi
 verify: vet lint
 
 # Simplified dead code detector. Used for skipping certain checks on unreachable code
@@ -179,28 +177,28 @@ format:
 
 # Cleaning the project, by deleting binaries.
 clean-bin:
-	@echo "$(WARN_COLOR)$(MSG_PREFIX) Cleaning...$(NO_COLOR)"
+	@echo "$(WARN_COLOR)$(MSG_PREFIX) Cleaning binaries...$(NO_COLOR)"
 	for GO_OS in $(OSs); do \
-        for GO_ARCH in $(ARCHS); do \
-            TARGET_BINARY=${BINARY_BASE}-$$GO_OS-$$GO_ARCH; \
-            if [ -f $$TARGET_BINARY ] ; then rm -rf $$TARGET_BINARY ; fi \
-        done; \
-    done
+		for GO_ARCH in $(ARCHS); do \
+			TARGET_BINARY=${BINARY_BASE}-$$GO_OS-$$GO_ARCH; \
+			if [ -f $$TARGET_BINARY ] ; then rm -rf $$TARGET_BINARY ; fi \
+		done; \
+	done
 
 clean: clean-bin
-	$(GO) clean -i $(GO_FLAGS) net
-	rm -rf $(COVERAGE_PATH)
+	@$(GO) clean -i $(GO_FLAGS) net
+	@rm -rf $(COVERAGE_PATH)
 
 nuke:
-	$(GO) clean -i $(GO_FLAGS) ./...
+	@$(GO) clean -i $(GO_FLAGS) ./...
 
 run:
-	if [ ! -f $(TARGET_BINARY) ] ; then $(MAKE) build; fi
+	@if [ ! -f $(TARGET_BINARY) ] ; then $(MAKE) build; fi
 	@$(TARGET_BINARY) $(args)
 
 image:
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Creating Docker Image...$(NO_COLOR)"
-	@$(DOCKER) build . -t $(REGISTRY_REPO) $(args)
+	@$(DOCKER) build . -t $(REGISTRY_REPO) -f $(DOCKER_FILE) $(args)
 
 deploy:
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Deploying Docker Container...$(NO_COLOR)"
