@@ -121,6 +121,7 @@ You can use the following steps as a testing procedure
         
         ```bash
         $ make help
+          make setup
           export ARCH=amd64
           export FORWARDING_PORT=":8001"
           export LISTENING_PORT=":8002"
