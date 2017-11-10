@@ -242,5 +242,5 @@ deploy:
 	@$(SUDO) bash ./deploy.sh $(args)
 
 publish:
-	@echo "$(WARN_COLOR)$(MSG_PREFIX) Pushing Docker Image to $(REGISTRY_REPO)...$(NO_COLOR)"
+	@echo "$(WARN_COLOR)$(MSG_PREFIX) Pushing Docker Image to $(REGISTRY_REPO):$(DOCKER_TAG)...$(NO_COLOR)"
 	@$(DOCKER) push $(REGISTRY_REPO):$(DOCKER_TAG)
