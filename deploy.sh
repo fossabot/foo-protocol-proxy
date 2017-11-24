@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 IMAGE_PREFIX="ahmedkamal"
 REGISTRY_REPO="foo-protocol-proxy"
 IMAGE_TAG=$(git describe --abbrev=0 | sed 's/^v\(.*\)$/\1/' 2>/dev/null)
