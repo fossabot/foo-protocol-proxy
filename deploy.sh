@@ -4,6 +4,7 @@ set -e
 
 IMAGE_PREFIX="ahmedkamal"
 REGISTRY_REPO="foo-protocol-proxy"
+DOCKER_FILE="Dockerfile-proxy"
 IMAGE_TAG=$(git describe --abbrev=0 | sed 's/^v\(.*\)$/\1/' 2>/dev/null)
 FORWARDING_PORT=8001
 LISTENING_PORT=8002
@@ -34,6 +35,7 @@ fi
 
 export IMAGE_PREFIX="$IMAGE_PREFIX"
 export REGISTRY_REPO="$REGISTRY_REPO"
+export DOCKER_FILE="$DOCKER_FILE"
 export IMAGE_TAG="$IMAGE_TAG"
 export FORWARDING_PORT="$FORWARDING_PORT"
 export LISTENING_PORT="$LISTENING_PORT"

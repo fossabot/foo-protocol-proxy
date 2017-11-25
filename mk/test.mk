@@ -4,7 +4,7 @@ unit: ## to run long unit tests.
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Unit tests$(MSG_SUFFIX)$(NO_COLOR)"
 	@$(GO) test -cover -parallel $(PARALLEL_TESTS) -timeout=$(TEST_TIMEOUT) -tags $(GO_TAGS) $(GO_FLAGS) ./...
 
-# Quick test. You can bypass long tests using: `if testing.Short() { t.Skip("Skipping in short mode.") }`
+# Quick test. You can bypass long tests using: `if testing.Short() { t.Skip("Skipping in short mode.") }`.
 unit-short: ## to run short unit tests.
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Unit tests (short)$(MSG_SUFFIX)$(NO_COLOR)"
 	@$(GO) test -test.short -cover -parallel $(PARALLEL_TESTS) -timeout=$(TEST_TIMEOUT) -tags $(GO_TAGS) $(GO_FLAGS) ./...

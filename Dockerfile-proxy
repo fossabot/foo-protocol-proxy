@@ -23,7 +23,10 @@ RUN \
     GOOS=linux \
     # Architecture.
     GOARCH=amd64 \
-    go build -a -installsuffix cgo -o bin/foo-protocol-proxy .
+    go build -o bin/foo-protocol-proxy \
+        -i -a -installsuffix cgo \
+        -ldflags '-s -w -extldflags "-lm -lstdc++ -static -v"' \
+        -tags negto .
 
 # Production
 FROM alpine as production

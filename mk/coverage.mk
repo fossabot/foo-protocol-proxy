@@ -4,7 +4,7 @@ define coverPackage
 	$(GO) test -cover -parallel $(PARALLEL_TESTS) -timeout $(TEST_TIMEOUT) -covermode=$(COVERAGE_MODE) -coverprofile $(COVERAGE_PATH)/$(1).part $(GO_FLAGS) ./$(1);
 endef
 
-# Goveralls dependency
+# Goveralls binary.
 GOVERALLS_BIN := $(GOPATH)/bin/goveralls
 GOVERALLS := $(shell [ -x $(GOVERALLS_BIN) ] && echo $(GOVERALLS_BIN) || echo '')
 
@@ -13,7 +13,7 @@ cover: $(COVERAGE_PROFILE) ## to run test with coverage and report that out to p
 coverage-html: $(COVERAGE_HTML) ## to export coverage results to html format"$(COVERAGE_PATH)/index.html".
 	@open "$(COVERAGE_HTML)"
 
-# Send the results to coveralls
+# Send the results to coveralls.
 coverage-send: $(COVERAGE_PROFILE)
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Sending coverage$(MSG_SUFFIX)$(NO_COLOR)"
 	@$(if $(GOVERALLS), , $(error Please run make get-deps))

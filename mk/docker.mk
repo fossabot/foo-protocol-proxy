@@ -10,6 +10,6 @@ publish: ## to publish the docker image to dockerhub repository.
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Pushing Docker Image to $(REGISTRY_REPO):$(DOCKER_TAG)$(MSG_SUFFIX)$(NO_COLOR)"
 	@$(DOCKER) push $(REGISTRY_REPO):$(DOCKER_TAG)
 
-docker-kill: ## to send kill signal to the main docker container process.
+docker-kill: ## to send kill signal to the main process at the docker container.
 	@echo "$(WARN_COLOR)$(MSG_PREFIX) Sending kill signal to main Docker process$(MSG_SUFFIX)$(NO_COLOR)"
 	@$(DOCKER) exec -it $(BINARY_PREFIX)-${DOCKER_TAG} pkill $(args) $(BINARY_PREFIX) > /dev/null 2>&1
