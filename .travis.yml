@@ -1,5 +1,6 @@
+group: edge
 language: go
-sudo: false
+sudo: required
 
 go_import_path: github.com/ahmedkamals/foo-protocol-proxy
 
@@ -23,9 +24,6 @@ branches:
     # IMPORTANT Ruby regex to match tags. Required, or travis won't trigger deploys when a new tag
     # is pushed. This regex matches semantic versions like v1.2.3-rc4+2016.02.22
     - /^v\d+\.\d+\.\d+.*$/
-
-install:
-  - make setup
 
 jobs:
   include:
@@ -66,6 +64,12 @@ jobs:
         - BUILD=false
       install:
         - make get-deps
+
+before_install:
+   - bash ./.travis/install.sh
+
+install:
+  - make setup
 
 script:
   # This to fix the error "fatal: ref HEAD is not a symbolic ref", that appears after every make call.

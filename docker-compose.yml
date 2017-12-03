@@ -9,6 +9,9 @@ services:
     build:
       context: .
       dockerfile: ${DOCKER_FILE}
+      args:
+          ALPINE_VERSION: latest
+          GOLANG_VERSION: 1
     env_file:
       - env/proxy.env
     environment:

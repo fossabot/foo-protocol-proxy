@@ -1,8 +1,7 @@
-Foo Protocol Proxy
+Foo Protocol Proxy [![Build Status](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy  "Build Status")
 ==================
 
 [![GitHub tag](https://img.shields.io/github/tag/ahmedkamals/foo-protocol-proxy.svg?style=flat)](https://github.com/ahmedkamals/foo-protocol-proxy/releases  "Version Tag")
-[![Build Status](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy  "Build Status")
 [![Coverage Status](https://coveralls.io/repos/github/ahmedkamals/foo-protocol-proxy/badge.svg?branch=master)](https://coveralls.io/github/ahmedkamals/foo-protocol-proxy?branch=master  "Code Coverage")
 [![Go Report Card](https://goreportcard.com/badge/github.com/ahmedkamals/foo-protocol-proxy)](https://goreportcard.com/report/github.com/ahmedkamals/foo-protocol-proxy  "Go Report Card")
 [![GoDoc](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy?status.svg)](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy "API Documentation")
@@ -172,9 +171,8 @@ You can use the following steps as a testing procedure
        **Sending `SIGUSR2` Signal**
          
        ```bash
-       $ export IMAGE_TAG=$(git describe --abbrev=0 | cut -d "v" -f 2 2> /dev/null)
-         make docker-kill args=-SIGUSR2
-         docker logs -f foo-protocol-proxy-${IMAGE_TAG}
+       $ make docker-kill args=-SIGUSR2
+         make docker-logs
        ```
        
   * **Multiple Client Connections**
