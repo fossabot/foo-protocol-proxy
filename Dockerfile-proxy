@@ -1,34 +1,35 @@
-FROM golang:alpine as builder
+ARG ALPINE_VERSION=latest
+ARG GOLANG_VERSION=1
+
+FROM golang:${GOLANG_VERSION}-alpine as builder
 MAINTAINER Ahmed Kamal <me.ahmed.kamal@gmail.com>
 
 WORKDIR /go/src/app
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
-    git \
-    ca-certificates
-
 COPY . .
 
 # "go get -d -v ./..."
-RUN go-wrapper download && \
 # "go install -v ./..."
-    go-wrapper install
-
-RUN \
-    # Disable cross-compiling.
-    CGO_ENABLED=0 \
-    # Compile linux only.
-    GOOS=linux \
-    # Architecture.
-    GOARCH=amd64 \
-    go build -a -installsuffix cgo -o bin/foo-protocol-proxy .
+RUN set -eux; \
+    apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+    ca-certificates \
+    git \
+    bash \
+    make && \
+    go-wrapper download && \
+    go-wrapper install && \
+    make build BINARY_PREFIX=foo-protocol-proxy SUDO=
 
 # Production
-FROM alpine as production
+FROM alpine:${ALPINE_VERSION} as production
 # Copying the artifact generated from the previous step "builder".
-COPY --from=builder /go/src/app/bin/foo-protocol-proxy /usr/bin/foo-protocol-proxy
+COPY --from=builder /go/src/app/bin/foo-protocol-proxy-linux-amd64 /usr/bin/foo-protocol-proxy
+
+HEALTHCHECK --interval=5m --timeout=3s --start-period=1s --retries=3 \
+  CMD curl -f http://localhost:$HTTP_PORT/ || exit 1
+
 ENTRYPOINT foo-protocol-proxy \
             -forward ":"$FORWARDING_PORT \
             -listen ":"$LISTENING_PORT \

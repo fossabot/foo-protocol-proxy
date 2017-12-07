@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-set -e
+set -eux
 
 IMAGE_PREFIX="ahmedkamal"
 REGISTRY_REPO="foo-protocol-proxy"
-IMAGE_TAG=$(git describe --abbrev=0 | sed 's/^v\(.*\)$/\1/' 2>/dev/null)
+DOCKER_FILE="Dockerfile-proxy"
+IMAGE_TAG=$(git describe --abbrev=0 | sed 's/^v\(.*\)$/\1/' 2> /dev/null)
 FORWARDING_PORT=8001
 LISTENING_PORT=8002
 HTTP_PORT=8088
@@ -34,6 +35,7 @@ fi
 
 export IMAGE_PREFIX="$IMAGE_PREFIX"
 export REGISTRY_REPO="$REGISTRY_REPO"
+export DOCKER_FILE="$DOCKER_FILE"
 export IMAGE_TAG="$IMAGE_TAG"
 export FORWARDING_PORT="$FORWARDING_PORT"
 export LISTENING_PORT="$LISTENING_PORT"
@@ -42,7 +44,7 @@ export RECOVERY_PATH="$RECOVERY_PATH"
 
 # Gets the current platform.
 getPlatform() {
-  echo $(uname -s | tr '[:upper:]' '[:lower:]')
+  echo $(uname -s | tr '[:upper:]' '[:lower:]') 2>&1
 }
 
 # Should an ip alias used based on the platform.

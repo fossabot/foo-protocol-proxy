@@ -1,17 +1,13 @@
 GO := go
-GO_OS ?= $(shell $(GO) env GOOS)
-GO_ARCH ?= $(shell $(GO) env GOARCH)
+GO_OS ?= $(shell $(GO) env GOOS 2> /dev/null)
+GO_ARCH ?= $(shell $(GO) env GOARCH 2> /dev/null)
 GO_FLAGS ?= $(GO_FLAGS:)
 GO_LINT ?= golint
 GO_FMT ?= gofmt
 
-PKG_BASE ?= $(shell $(GO) list -e ./)
-PKGS ?= $(shell $(GO) list ./... | grep -v /vendor/)
-GO_FILES := $(shell find . -name "*.go" -type f -not -path "./vendor/*")
-
-# To disable root, you can do "make SUDO="
-SUDO := $(shell echo "sudo -E")
-DOCKER := $(shell docker info > /dev/null 2>&1 || $(SUDO)) docker
+PKG_BASE ?= $(shell $(GO) list -e ./ 2> /dev/null)
+PKGS ?= $(shell $(GO) list ./... 2> /dev/null | grep -v /vendor/)
+GO_FILES := $(shell find . -name "*.go" -type f -not -path "./vendor/*" 2> /dev/null)
 
 include mk/build.mk
 include mk/coverage.mk
