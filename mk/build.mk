@@ -41,12 +41,12 @@ endif
 # -X version.GitCommit for telling the Go binary the git commit used,
 # -X main.version for telling the Go binary which version it is.
 GO_LINKER_FLAGS ?=-s \
-	-v \
-	-w \
-    -X ${PKG_BASE}/version.BuildHash=$(BUILD_HASH) \
-	-X ${PKG_BASE}/core.BuildTime=$(BUILD_TIME) \
-	-X ${PKG_BASE}/core.GitBranch=$(GIT_BRANCH) \
-	-X ${PKG_BASE}/core.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)
+        -v \
+        -w \
+        -X ${PKG_BASE}/version.BuildHash=$(BUILD_HASH) \
+        -X ${PKG_BASE}/core.BuildTime=$(BUILD_TIME) \
+        -X ${PKG_BASE}/core.GitBranch=$(GIT_BRANCH) \
+        -X ${PKG_BASE}/core.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)
 
 ifdef BUILD_VERSION
 	GO_LINKER_FLAGS += -X main.version=$(BUILD_VERSION)

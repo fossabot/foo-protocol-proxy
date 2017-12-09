@@ -27,8 +27,11 @@ FROM alpine:${ALPINE_VERSION} as production
 # Copying the artifact generated from the previous step "builder".
 COPY --from=builder /go/src/app/bin/foo-protocol-proxy-linux-amd64 /usr/bin/foo-protocol-proxy
 
+RUN set -eux; \
+    apk add --update curl
+
 HEALTHCHECK --interval=5m --timeout=3s --start-period=1s --retries=3 \
-  CMD curl -f http://localhost:$HTTP_PORT/ || exit 1
+  CMD curl -f http://localhost:$HTTP_PORT/health || exit 1
 
 ENTRYPOINT foo-protocol-proxy \
             -forward ":"$FORWARDING_PORT \
