@@ -53,7 +53,9 @@ ifdef BUILD_VERSION
 	DOCKER_TAG = $(BUILD_VERSION)
 endif
 
-GO_LINKER_FLAGS	+= -extldflags "$(EXTLD_FLAGS)"
+ifdef EXTLD_FLAGS
+    GO_LINKER_FLAGS	+= -extldflags "$(EXTLD_FLAGS)"
+endif
 
 GO_GC_FLAGS :=-trimpath=$(CURDIR)
 
@@ -67,8 +69,6 @@ GO_ASM_FLAGS :=-trimpath=$(CURDIR)
 
 # netgo for enforcing the native Go DNS resolver.
 GO_TAGS ?= netgo
-
-BUILD_FLAGS ?=$(GO_BUILD_FLAGS) -ldflags '$(GO_LINKER_FLAGS)' -gcflags=$(GO_GC_FLAGS) -asmflags=$(GO_ASM_FLAGS) -tags $(GO_TAGS) $(GO_FLAGS)
 
 # Binary output prefix.
 BINARY_PREFIX := $(shell basename `pwd` 2> /dev/null)
@@ -93,11 +93,25 @@ arch.386 := 386
 define gocross
 	$(if $(findstring [$(1)/$(2)],$(VALID_OS_ARCH)), \
 	printf "$(WARN_COLOR)$(MSG_PREFIX) Building binary for [$(1)/$(2)]$(MSG_SUFFIX)$(NO_COLOR)\n"; \
-	printf "$(INFO_COLOR) CGO_ENABLED=$(CGO_ENABLED) GOOS=$(1) GOARCH=$(2) $(GO_ENV_FLAGS)\n $(GO) build -o $(BINARY_PATH)/$(BINARY_PREFIX)-${os.$(1)}-${arch.$(2)}$(call extension,$(GOOS))\n $(BUILD_FLAGS) . $(NO_COLOR)\n"; \
+	printf "$(INFO_COLOR)\
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(1) GOARCH=$(2) $(GO_ENV_FLAGS)\n\
+	    $(GO) build -o $(BINARY_PATH)/$(BINARY_PREFIX)-${os.$(1)}-${arch.$(2)}$(call extension,$(GO_OS))\n\
+	    $(GO_BUILD_FLAGS)\n\
+	    -ldflags '$(shell echo $(GO_LINKER_FLAGS) | sed -e 's/extldflags $(EXTLD_FLAGS)/extldflags \\"$(EXTLD_FLAGS)\\"/g' 2> /dev/null)'\n\
+	    -gcflags=\"$(GO_GC_FLAGS)\"\n\
+	    -asmflags=\"$(GO_ASM_FLAGS)\"\n\
+	    -tags $(GO_TAGS)\n\
+	    $(GO_FLAGS) .\
+	    $(NO_COLOR)\n"; \
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(1) GOARCH=$(2) $(GO_ENV_FLAGS) \
 		$(GO) build \
-		-o $(BINARY_PATH)/$(BINARY_PREFIX)-${os.$(1)}-${arch.$(2)}$(call extension,$(GOOS)) \
-		$(BUILD_FLAGS) .;)
+		-o $(BINARY_PATH)/$(BINARY_PREFIX)-${os.$(1)}-${arch.$(2)}$(call extension,$(GO_OS)) \
+		$(GO_BUILD_FLAGS) \
+		-ldflags '$(GO_LINKER_FLAGS)' \
+		-gcflags="$(GO_GC_FLAGS)" \
+		-asmflags="$(GO_ASM_FLAGS)" \
+		-tags $(GO_TAGS) \
+		$(GO_FLAGS) .;)
 endef
 
 define buildTargets
