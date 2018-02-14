@@ -48,12 +48,12 @@ func TestShouldConfigureRoutesCorrectly(t *testing.T) {
 				t.Error(testCase.Format(actual))
 			}
 			continue
-		} else {
-			expected := testCase.Expected.(*http.ServeMux)
+		}
 
-			if !reflect.DeepEqual(expected, actual) {
-				t.Error(testCase.Format(actual))
-			}
+		expected := testCase.Expected.(*http.ServeMux)
+
+		if !reflect.DeepEqual(expected, actual) {
+			t.Error(testCase.Format(actual))
 		}
 	}
 }

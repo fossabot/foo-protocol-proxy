@@ -1,7 +1,8 @@
-Foo Protocol Proxy [![Build Status](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy  "Build Status")
+Foo Protocol Proxy [![CircleCI](https://circleci.com/gh/ahmedkamals/foo-protocol-proxy.svg?style=svg)](https://circleci.com/gh/ahmedkamals/foo-protocol-proxy "Build Status")
 ==================
 
 [![GitHub tag](https://img.shields.io/github/tag/ahmedkamals/foo-protocol-proxy.svg?style=flat)](https://github.com/ahmedkamals/foo-protocol-proxy/releases  "Version Tag")
+[![Travis CI](https://travis-ci.org/ahmedkamals/foo-protocol-proxy.svg)](https://travis-ci.org/ahmedkamals/foo-protocol-proxy "Cross Build Status [Linux, OSx]") 
 [![Coverage Status](https://coveralls.io/repos/github/ahmedkamals/foo-protocol-proxy/badge.svg?branch=master)](https://coveralls.io/github/ahmedkamals/foo-protocol-proxy?branch=master  "Code Coverage")
 [![Go Report Card](https://goreportcard.com/badge/github.com/ahmedkamals/foo-protocol-proxy)](https://goreportcard.com/report/github.com/ahmedkamals/foo-protocol-proxy  "Go Report Card")
 [![GoDoc](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy?status.svg)](https://godoc.org/github.com/ahmedkamals/foo-protocol-proxy "API Documentation")
@@ -25,9 +26,9 @@ Table of Contents
 
 * [Overview](#overview)
 * [Getting Started](#getting-started)
-    * [Prerequisites](#prerequisites)
-    * [Installation](#installation)
-    * [Test Driver](#test-driver)
+    + [Prerequisites](#prerequisites)
+    + [Installation](#installation)
+    + [Test Driver](#test-driver)
 * [Tests](#tests)
 * [Coding - __Structure & Design__](#coding---structure--design)
 * [Todo](#todo)
@@ -45,7 +46,7 @@ Seq  := <integer>
 Data := <string without newline>
 ```
 
-When the Foo server receives a TCP connection initiated by a Foo client,
+> When the Foo server receives a TCP connection initiated by a Foo client,
 A session is started and a set of messages are exchanged between the two parties,
 till the client terminates the connection eventually.
 
@@ -200,7 +201,7 @@ $ make test
 | [`Proxy`][7]            | orchestrates the interactions between the components.                                                                                                    |
 | [`Listner`][8]          | awaits for client connections, and on every new connection, a `BridgeConnection` instance is created.                                                    |
 | [`BridgeConnection`][9] | acts as Bi-directional communication object, that passes data forward and backward to the server.                                                        |
-| [`Analyzer`][10]        | perform `analysis` by sniffing all the data read and written from the server.                                                                            |
+| [`Analyzer`][10]        | performs `analysis` by sniffing all the data read and written from the server.                                                                           |
 | [`Stats`][11]           | wraps stats data the would be flushed to stdout upon request.                                                                                            |
 | [`TimeTable`][12]       | contains snapshot of aggregated number of requests/responses at specific timestamp.                                                                      |
 | [`Saver`][13]           | handles reading/writing data.                                                                                                                            |

@@ -9,6 +9,7 @@ PKG_BASE ?= $(shell $(GO) list -e ./ 2> /dev/null)
 PKGS ?= $(shell $(GO) list ./... 2> /dev/null | grep -v /vendor/)
 GO_FILES := $(shell find . -name "*.go" -type f -not -path "./vendor/*" 2> /dev/null)
 
+include mk/utils.mk
 include mk/build.mk
 include mk/coverage.mk
 include mk/docker.mk
