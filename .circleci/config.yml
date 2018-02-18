@@ -1,0 +1,30 @@
+version: 2
+jobs:
+  validation:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/ahmedkamals/foo-protocol-proxy
+    steps:
+      - checkout
+      - run: go get github.com/golang/lint/golint
+      - run: go get github.com/client9/misspell/cmd/misspell
+      - run: go get github.com/gordonklaus/ineffassign
+      - run: make validate
+
+  unit:
+    docker:
+      - image: circleci/golang:1.9
+
+    working_directory: /go/src/github.com/ahmedkamals/foo-protocol-proxy
+    steps:
+      - checkout
+      - run: make unit
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - validation
+      - unit:
+          requires:
+            - validation
