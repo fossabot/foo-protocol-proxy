@@ -5,7 +5,7 @@ and effort involved.
 It might take a little while for us to get around to reviewing it. Sorry for the delay.
 
 To help things go as quickly as possible, please:
-- read code-of-conduct.md
+- read CODE_OF_CONDUCT.md
 - keep the PR as small and focused as you can
 - follow the coding guidelines found in CONTRIBUTING.md
 -->

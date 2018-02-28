@@ -6,12 +6,13 @@ Thanks for your interest in contributing to this project and for taking the time
 
 Pull requests should have the following guidelines:
 
- - [To be signed off](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work)
- - A logical series of [**squashed** well written commits](https://github.com/alphagov/styleguides/blob/master/git.md)
- - Please be generous describing your changes.
- - Although it is highly suggested to include tests, they are not a hard requirement in order to get your contributions accepted.
- - Keep pull requests small so core developers can review them quickly.
- - Keep each pull request focused on a specific topic. If you have two things to change, create two pull requests.
+ + Fork the repo and create your branch from `master`.
+ + [To be signed off](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work)
+ + A logical series of [**squashed** well written commits](https://github.com/alphagov/styleguides/blob/master/git.md)
+ + Please be generous describing your changes.
+ + Although it is highly suggested to include tests, they are not a hard requirement in order to get your contributions accepted.
+ + Keep pull requests small so core developers can review them quickly.
+ + Keep each pull request focused on a specific topic. If you have two things to change, create two pull requests.
    This helps reviewers to understand the meat of your contribution.
 
 ## Coding Style
@@ -63,4 +64,4 @@ kool-aid is a lot easier than going thirsty.
 
 # Acknowledgements
 
-Much of this taken from https://github.com/cloudescape/gowsdl/blob/master/CONTRIBUTING.md
+Much of this taken from [https://github.com/cloudescape/gowsdl/blob/master/CONTRIBUTING.md](https://github.com/cloudescape/gowsdl/blob/master/CONTRIBUTING.md)
