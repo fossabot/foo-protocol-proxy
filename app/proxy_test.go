@@ -6,6 +6,8 @@ import (
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
 	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
 	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
+	"github.com/kpango/glg"
+	"github.com/stretchr/testify/assert"
 	"net"
 	"reflect"
 	"testing"
@@ -48,12 +50,9 @@ func TestShouldStartProperly(t *testing.T) {
 
 		if !testCase.ExpectsError {
 			expected := testCase.Expected.(string)
-
-			if reflect.TypeOf(actual).String() != expected {
-				t.Error(testCase.Format(actual))
-			}
+			assert.Equal(t, expected, reflect.TypeOf(actual).String())
 		} else if err == nil {
-			t.Error(testCase.Format("There should be an error"))
+			assert.Equal(t, err, actual)
 		}
 	}
 
@@ -64,6 +63,7 @@ func getProxy(config config.Configuration) *Proxy {
 	return NewProxy(config,
 		getMockedAnalyzer(),
 		getMockedSaver(),
+		glg.New(),
 		make(chan error, 10),
 	)
 }
@@ -76,6 +76,6 @@ func getMockedAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{}
 }
 
-func getMockedSaver() *persistence.Saver {
-	return &persistence.Saver{}
+func getMockedSaver() persistence.Saver {
+	return &persistence.SaveHandler{}
 }

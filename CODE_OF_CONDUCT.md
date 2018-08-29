@@ -6,16 +6,16 @@ Anyone who violates this code of conduct may be banned from the community.
 
 Our open source community strives to:
 
- * **Be forgiving and patient:** humans are fallible and as such prone to make mistakes and inexplicably change their
+ * __Be forgiving and patient:__ humans are fallible and as such prone to make mistakes and inexplicably change their
  positions at times. Don't assume that other members are acting with malicious intent. Be prepared to forgive people
  who make mistakes and assist each other in learning from them. Playing a blame game doesn't help anyone.
  
- * **Be welcoming**: We strive to be a community that welcomes and supports people of all backgrounds and identities.
+ * __Be welcoming:__ We strive to be a community that welcomes and supports people of all backgrounds and identities.
  This includes, but is not limited to members of any race, ethnicity, culture, national origin, colour,
  immigration status, social and economic class, educational level, sex, sexual orientation,
  gender identity and expression, age, size, family status, political belief, religion, and mental and physical ability.
  
- * **Be considerate**: Your work will be used by other people, and you in turn will depend on the work of others.
+ * __Be considerate:__ Your work will be used by other people, and you in turn will depend on the work of others.
  Any decision you take will affect users and colleagues, and you should take those consequences into account when
  making decisions. Remember that we're a world-wide community, so you might not be communicating in someone else's
  primary language. So you should remember that the community has members with a diverse background, many of whom have
@@ -23,7 +23,7 @@ Our open source community strives to:
  of the English language. Bear in mind that actions will have an impact on other community members and the project
  as a whole, so take potential consequences into account before pursuing a course of action.
  
- * **Be respectful**:  Not all of us will agree all the time, so disagreements between people are to be expected
+ * __Be respectful:__  Not all of us will agree all the time, so disagreements between people are to be expected
  and are usually the sign of healthy debate and engagement. Disagreements can lead to frustration and even anger
  for some members, and We might all experience some frustration now and then, but it is no excuse for poor behavior
  and poor manners, and we cannot allow that frustration to turn into a personal attack, insults, intimidation or
@@ -31,11 +31,11 @@ Our open source community strives to:
  all communications / interactions stay professional at all times, because a community where people feel uncomfortable
  or threatened is not a productive one.
  
- * **Be careful in the words that we choose**: we are a community of professionals, and we conduct ourselves
+ * __Be careful in the words that we choose:__ we are a community of professionals, and we conduct ourselves
  professionally. Be kind to others. Do not insult or put down other participants. Harassment and other exclusionary
  behavior aren't acceptable.
 
- * **Try to understand why we disagree**: Disagreements, both social and technical, happen all the time.
+ * __Try to understand why we disagree:__ Disagreements, both social and technical, happen all the time.
  It is important that we resolve disagreements and differing views constructively. Remember that we’re different.
  The strength of our community comes from its diversity, people from a wide range of backgrounds.
  Different people have different perspectives on issues. Being unable to understand why someone holds a viewpoint

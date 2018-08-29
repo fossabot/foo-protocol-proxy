@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
+	"github.com/stretchr/testify/assert"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,19 +20,21 @@ func TestShouldHandleHealthRoutesCorrectly(t *testing.T) {
 		t.Error(err)
 	}
 
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", log.Ldate)
 	expected := string(expectedOutput)
 	testCases := []testingutil.TestCase{
 		{
 			ID: "Health route",
 			Input: map[string]http.Handler{
-				"/health": NewHealthHandler(),
+				"/health": NewHealthHandler(logger),
 			},
 			Expected: expected,
 		},
 		{
 			ID: "Status route",
 			Input: map[string]http.Handler{
-				"/status": NewHealthHandler(),
+				"/status": NewHealthHandler(logger),
 			},
 			Expected: expected,
 		},
@@ -57,9 +62,7 @@ func TestShouldHandleHealthRoutesCorrectly(t *testing.T) {
 				t.Errorf("Unexpectd header %s", w.Header().Get("Content-Type"))
 			}
 
-			if expected != strings.TrimSpace(w.Body.String()) {
-				t.Error(testCase.Format(w.Body.String()))
-			}
+			assert.Equal(t, expected, strings.TrimSpace(w.Body.String()))
 		}
 	}
 }

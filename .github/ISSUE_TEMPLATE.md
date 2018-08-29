@@ -39,10 +39,11 @@ Thank you!
 <!-- Specific steps, as minimally and precisely as possible. -->
 
 ## Anything else we need to know?
-- OS (e.g. from /etc/os-release):
-- Kernel (e.g. `uname -a`):
-- Install tools:
-- Others:
+
+- OS (e.g. from /etc/os-release)
+- Kernel (e.g. `uname -a`)
+- Install tools
+- Others
 <!-- 
 Additional information you deem important (e.g. issue happens only occasionally, special hardware required?, ...etc). 
 -->

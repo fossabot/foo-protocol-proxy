@@ -5,7 +5,7 @@ sudo: required
 go_import_path: github.com/ahmedkamals/foo-protocol-proxy
 
 git:
-  depth: 38
+  depth: 18
 
 matrix:
   allow_failures:
@@ -16,6 +16,7 @@ env:
   global:
     - secure: "mW/CjSIq7lQOjhN+syhoJHNh0oyt9teDlhB9ZUSsylkVQPisHPj/G6D5KSnjWmQzvuVFlxN1++O0VAtDasEOCir4YTUwQVgfceC90bePxaTLcJeva3mJNDVBMZR/GVrsL9uunHscfLRNtX6TBLCh4NEO6H341J6vbF0GIQ3deOlCHBLNLnBsc1larUAzjOoIqeK0+X4rEo4HaMg1BWuH0XL+QNdI2WVPXueNOVhimCClsW3HSgPEea5KTozMd08Kr+LTbt+N2RaM6jb/F+CfCQEy8f7VoZKMZlD5m5VBI/AmJtjrR9mcFs0cKq4+im73x/x6v4WoCDndHdP3wq5vvVZzOK3CbhiYAUqp5nsiNzWu6IPyS9q81GleBFWI7zT6d9bZG5ah/+4J8Vw7AXwrYb8691sRQ5HzXVkV9vkDfV/YSsse0kIiwOywBGSN1zMzjxoXZdCAKBWPiLLhnxNJLJfPjwUCZzXEGXPfRVNT6PZPH4smDceaDYntHQBQAO9w3C4PCi0Qczolj8d+XFmRhstl6xoTcMiPsPZESA4SIilwFJlmOzLQvDrfh3LUWMMS06Im1u79amYLMNq7LMtcsuhm3LbvgHxuIsEEnwC+covHutPeDiExte843dKrnJL2cgZa2ttzpoIMk2qgT/XV2MZiUny+da9wLkoiJLWrXTo="
     - BUILD=true
+    - GO111MODULE=on
 
 branches:
   only:
@@ -28,7 +29,7 @@ branches:
 jobs:
   include:
     - stage: Validation
-      go: 1.9
+      go: 1.12
       env:
         - VALIDATE=true
         - BUILD=false
@@ -36,15 +37,15 @@ jobs:
         - make get-deps
     - &unit-tests
       stage: Unit tests
-      go: 1.8
+      go: 1.12
       os: linux
       env: TESTS=true
     - <<: *unit-tests
       os: osx
     - <<: *unit-tests
-      go: 1.9.x
+      go: 1.12.x
     - <<: *unit-tests
-      go: 1.9.x
+      go: 1.12.x
       os: osx
     - <<: *unit-tests
       go: tip
@@ -52,13 +53,13 @@ jobs:
       go: tip
       os: osx
     - stage: Integration tests
-      go: 1.9
+      go: 1.12
       env:
         - BUILD=false
       script:
         - make integration
     - stage: Coverage
-      go: 1.9
+      go: 1.12
       env:
         - COVERAGE=true
         - BUILD=false
@@ -69,7 +70,7 @@ before_install:
    - bash ./.travis/install.sh
 
 install:
-  - make setup
+  - make go-install
 
 script:
   # This to fix the error "fatal: ref HEAD is not a symbolic ref", that appears after every make call.

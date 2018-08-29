@@ -3,7 +3,7 @@ package persistence
 import (
 	"encoding/json"
 	testingUtil "github.com/ahmedkamals/foo-protocol-proxy/testingutil"
-	"reflect"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -33,8 +33,6 @@ func TestShouldUnmarshallCorrectly(t *testing.T) {
 			t.Error(err)
 		}
 
-		if !reflect.DeepEqual(expected, actual) {
-			t.Error(testCase.Format(actual))
-		}
+		assert.Equal(t, expected, actual)
 	}
 }

@@ -1,0 +1,10 @@
+ARG MAINTAINER_NAME="Ahmed Kamal"
+ARG MAINTAINER_EMAIL
+
+FROM ubuntu as foo.client
+MAINTAINER $MAINTAINER_NAME <${MAINTAINER_EMAIL}>
+
+COPY assets/bin/client-linux /usr/local/bin/
+
+ENTRYPOINT client-linux \
+           -connect $PROXY_CONTAINER_NAME":"$LISTENING_PORT
