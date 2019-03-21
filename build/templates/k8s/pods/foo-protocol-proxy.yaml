@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "foo-protocol-proxy"
+  labels:
+    app: foo-protocol-proxy
+spec:
+  containers:
+    - name: foo.proxy
+      image: "{{REGISTRY_REPO}}:{{IMAGE_TAG}}"
+      ports:
+        - name: http
+          containerPort: {{HTTP_PORT}}
+      resources:
+        limits:
+          cpu: 0.2
+          memory: "10Mi"
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 80
+          scheme: HTTP
+        initialDelaySeconds: 5
+        periodSeconds: 15
+        timeoutSeconds: 5
+      readinessProbe:
+        httpGet:
+          path: /status
+          port: 80
+          scheme: HTTP
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+    - name: foo.server
+      image: "foo-server"
+      ports:
+        - name: FORWARDING_PORT
+          containerPort: {{FORWARDING_PORT}}
+        - name: LISTENING_PORT
+          containerPort: {{LISTENING_PORT}}
+        - name: HTTP_PORT
+          containerPort: {{HTTP_PORT}}
+        args:
+          - "-http=0.0.0.0:80"
+          - "-health=0.0.0.0:81"
+          - "-secret=secret"
+    - name: foo.clien
+      image: "foo-client"
+      ports:
+        - name: FORWARDING_PORT
+          containerPort: {{FORWARDING_PORT}}
+        - name: LISTENING_PORT
+          containerPort: {{LISTENING_PORT}}

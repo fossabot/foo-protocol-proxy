@@ -1,27 +1,24 @@
 package app
 
 import (
-	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
-	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/handlers"
-	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
-	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
+	"bytes"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/handlers"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/testingutil"
+	"github.com/stretchr/testify/assert"
+	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"testing"
 )
 
 func TestShouldGetDispatcherRoutesCorrectly(t *testing.T) {
 	t.Parallel()
 	analyzer := analysis.NewAnalyzer()
-	routes := map[string]http.Handler{
-		"/metrics": handlers.NewMetricsHandler(analyzer),
-		"/stats":   handlers.NewMetricsHandler(analyzer),
-		"/health":  handlers.NewHealthHandler(),
-		"/status":  handlers.NewHealthHandler(),
-	}
-	dispatcher := NewDispatcher(config.Configuration{}, analyzer, persistence.NewSaver(""))
+	routes := getRoutes(analyzer)
+	saver := getMockedSaver()
+	dispatcher := NewDispatcher(config.Configuration{}, analyzer, saver)
 
 	testCases := []testingutil.TestCase{
 		{
@@ -36,8 +33,11 @@ func TestShouldGetDispatcherRoutesCorrectly(t *testing.T) {
 		expected := testCase.Expected.(map[string]http.Handler)
 		actual := input.getRoutes()
 
-		if !reflect.DeepEqual(expected, actual) {
-			t.Error(testCase.Format(actual))
+		assert.Len(t, actual, len(expected))
+
+		for key, val := range actual {
+			assert.NotEmpty(t, actual[key])
+			assert.Implements(t, (*http.Handler)(nil), val)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func TestShouldBlockIndefinitely(t *testing.T) {
 
 	configuration := config.Configuration{}
 	analyzer := analysis.NewAnalyzer()
-	saver := persistence.NewSaver("")
+	saver := getMockedSaver()
 	dispatcher := NewDispatcher(configuration, analyzer, saver)
 
 	for _, testCase := range testCases {
@@ -63,8 +63,17 @@ func TestShouldBlockIndefinitely(t *testing.T) {
 		input <- os.Interrupt
 		actual := dispatcher.blockIndefinitely(input, true)
 
-		if expected != actual {
-			t.Error(testCase.Format(actual))
-		}
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func getRoutes(analyzer *analysis.Analyzer) map[string]http.Handler {
+	var buf bytes.Buffer
+	eventLogger := log.New(&buf, "", log.Ldate)
+
+	return map[string]http.Handler{
+		"/metrics": handlers.MetricsHandler(analyzer, eventLogger),
+		"/stats":   handlers.MetricsHandler(analyzer, eventLogger),
+		"/version": handlers.VersionHandler("test-version", eventLogger),
 	}
 }

@@ -1,12 +1,11 @@
 package app
 
 import (
-	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
-	"github.com/ahmedkamals/foo-protocol-proxy/communication"
-	"github.com/ahmedkamals/foo-protocol-proxy/config"
-	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
-	"io"
-	"log"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/analysis"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/communication"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/config"
+	"github.com/ahmedkamals/foo-protocol-proxy/app/persistence"
+	"github.com/kpango/glg"
 	"net"
 	"os"
 	"os/signal"
@@ -23,10 +22,11 @@ type (
 		clientConnChan chan net.Conn
 		analyzer       *analysis.Analyzer
 		signalChan     chan os.Signal
-		errorChan      chan error
+		errChan        chan error
 		milliTicker    *time.Ticker
 		oneSecTicker   *time.Ticker
-		saver          *persistence.Saver
+		saver          persistence.Saver
+		logger         *glg.Glg
 	}
 )
 
@@ -34,7 +34,8 @@ type (
 func NewProxy(
 	config config.Configuration,
 	analyzer *analysis.Analyzer,
-	saver *persistence.Saver,
+	saver persistence.Saver,
+	logger *glg.Glg,
 	errorChan chan error,
 ) *Proxy {
 	return &Proxy{
@@ -42,10 +43,11 @@ func NewProxy(
 		clientConnChan: make(chan net.Conn),
 		analyzer:       analyzer,
 		signalChan:     make(chan os.Signal, 1),
-		errorChan:      errorChan,
+		errChan:        errorChan,
 		milliTicker:    time.NewTicker(time.Millisecond),
 		oneSecTicker:   time.NewTicker(time.Second),
 		saver:          saver,
+		logger:         logger,
 	}
 }
 
@@ -59,32 +61,40 @@ func (p *Proxy) Start() error {
 
 	p.recoverData()
 
-	listener := communication.NewListener(lis, p.errorChan)
+	listener := communication.NewListener(lis, p.errChan)
 
-	log.Printf("Forwarding from %s to %s", listener.Addr(), p.config.Forwarding)
+	p.errChan <- p.logger.Infof("Forwarding from %s to %s", listener.Addr(), p.config.Forwarding)
 
 	go listener.AwaitForConnections(p.clientConnChan)
 	go p.handleClientConnections(p.clientConnChan)
 	go p.heartbeat()
 	go p.reportStatus()
 	go p.analyzer.MonitorData()
-	go p.monitorErrors()
 
 	signal.Notify(p.signalChan, syscall.SIGUSR2)
 
 	return nil
 }
 
+func (p *Proxy) reportError(err error) {
+	p.errChan <- err
+}
+
 func (p *Proxy) recoverData() {
 	data, err := p.saver.Read()
 
 	if err != nil {
-		p.errorChan <- err
+		p.reportError(err)
 		return
 	}
 
 	recovery := persistence.NewEmptyRecovery()
-	recovery.Unmarshal(data)
+	err = recovery.Unmarshal(data)
+
+	if err != nil {
+		p.reportError(err)
+		return
+	}
 
 	mutex := sync.Mutex{}
 	mutex.Lock()
@@ -97,7 +107,7 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 		serverConn, err := p.forward()
 
 		if err != nil {
-			p.errorChan <- err
+			p.reportError(err)
 			os.Exit(1)
 		}
 
@@ -105,7 +115,7 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 			clientConn,
 			serverConn,
 			p.analyzer.GetDataSource(),
-			p.errorChan,
+			p.errChan,
 		)
 		bridgeConnection.Bind()
 	}
@@ -145,33 +155,26 @@ func (p *Proxy) persistData() {
 	data, err := r.Marshal()
 
 	if err != nil {
-		p.errorChan <- err
+		p.reportError(err)
 	}
 
-	p.saver.Save(data)
+	p.errChan <- p.saver.Save(data)
 }
 
 func (p *Proxy) reportStatus() {
 	for {
-		<-p.signalChan
-		report, err := p.analyzer.Report()
-
-		if err != nil {
-			p.errorChan <- err
-			return
-		}
-
-		println(report)
-	}
-}
-
-func (p *Proxy) monitorErrors() {
-	for {
 		select {
-		case err := <-p.errorChan:
-			if err != nil && err != io.EOF {
-				log.Println(err)
+		case <-p.signalChan:
+			report, err := p.analyzer.Report()
+
+			if err != nil {
+				p.reportError(err)
+				return
 			}
+
+			println(report)
+		default:
+			continue
 		}
 	}
 }
@@ -180,8 +183,7 @@ func (p *Proxy) monitorErrors() {
 func (p *Proxy) Close() {
 	close(p.clientConnChan)
 	close(p.signalChan)
-	close(p.errorChan)
-	p.saver.Close()
+	p.errChan <- p.saver.Close()
 	p.milliTicker.Stop()
 	p.oneSecTicker.Stop()
 }

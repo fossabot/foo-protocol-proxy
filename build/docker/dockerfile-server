@@ -1,0 +1,10 @@
+ARG MAINTAINER_NAME="Ahmed Kamal"
+ARG MAINTAINER_EMAIL
+
+FROM ubuntu as foo.server
+MAINTAINER ${MAINTAINER_NAME:-"Ahmed Kamal"} <${MAINTAINER_EMAIL}>
+
+COPY assets/bin/server-linux /usr/local/bin/
+
+ENTRYPOINT server-linux \
+            -listen ":"$FORWARDING_PORT

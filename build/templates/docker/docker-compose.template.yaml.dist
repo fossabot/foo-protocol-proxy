@@ -1,0 +1,110 @@
+version: '3.7'
+
+services:
+  Proxy:
+    container_name: '{{CONTAINER_NAME}}'
+    image: '{{REGISTRY_REPO}}:{{IMAGE_TAG}}'
+    depends_on:
+    - Server
+#    deploy:
+#      mode: replicated
+#      replicas: 2
+#      restart_policy:
+#        condition: on-failure
+#      resources:
+#        limits:
+#          cpus: '{{CPU_LIMIT}}'
+#          memory: '{{MEMORY_LIMIT}}'
+#        reservations:
+#          cpus: '{{RESERVED_CPU}}'
+#          memory: '{{RESERVED_MEMORY}}'
+    build:
+      cache_from:
+      - 'go:{{GOLANG_VERSION}}-alpine'
+      shm_size: '1gb'
+      context: .
+      dockerfile: '{{DOCKER_FILE}}'
+      target: 'production'
+      labels:
+        container.service: '{{SERVICE_NAME}}'
+        container.description: '{{SERVICE_DESCRIPTION}}'
+      args:
+        MAINTAINER_NAME: '{{MAINTAINER_NAME}}'
+        MAINTAINER_EMAIL: '{{MAINTAINER_EMAIL}}'
+        GOLANG_VERSION: '{{GOLANG_VERSION}}'
+    env_file:
+    - '{{ENV_FILE_PATH}}'
+    environment:
+    - SERVER_CONTAINER_NAME=foo.server
+    ports:
+    - '{{HEALTH_PORT}}:{{HEALTH_PORT}}' # HEALTH
+    - '{{HTTP_PORT}}:{{HTTP_PORT}}' # HTTP
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:{{HEALTH_PORT}}/heartbeat']
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    volumes:
+    - type: 'bind'
+      source: './.go/src/{{PKG_NAMESPACE}}'
+      target: '/go/src/{{PKG_NAMESPACE}}'
+    pid: 'host'
+    userns_mode: 'host'
+    cap_add:
+    - ALL
+    isolation: 'default'
+    privileged: true
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '200k'
+        max-file: '10'
+    tmpfs:
+    - '/go/src/{{PKG_NAMESPACE}}/.data'
+    networks:
+      - app-network
+    stop_signal: SIGTERM
+    stop_grace_period: 1m30s
+    sysctls:
+    - net.core.somaxconn=1024
+    - net.ipv4.tcp_syncookies=0
+  Server:
+      container_name: 'foo.server'
+      image: 'foo-server:latest'
+      build:
+        context: ./build/docker
+        dockerfile: 'dockerfile-server'
+        args:
+          MAINTAINER_NAME: '{{MAINTAINER_NAME}}'
+          MAINTAINER_EMAIL: '{{MAINTAINER_EMAIL}}'
+      env_file:
+      - '{{ENV_FILE_PATH}}'
+      networks:
+      - app-network
+  Client:
+      container_name: 'foo.client'
+      image: 'foo-client:latest'
+      build:
+        context: ./build/docker
+        dockerfile: 'dockerfile-client'
+        args:
+          MAINTAINER_NAME: '{{MAINTAINER_NAME}}'
+          MAINTAINER_EMAIL: '{{MAINTAINER_EMAIL}}'
+      depends_on:
+        - Proxy
+      environment:
+        PROXY_CONTAINER_NAME: '{{CONTAINER_NAME}}'
+      env_file:
+      - '{{ENV_FILE_PATH}}'
+      networks:
+      - app-network
+networks:
+  app-network:
+    attachable: true
+    name: app-net

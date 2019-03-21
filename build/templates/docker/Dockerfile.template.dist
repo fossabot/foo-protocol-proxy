@@ -1,0 +1,50 @@
+ARG GOLANG_VERSION=1
+ARG MAINTAINER_NAME="Ahmed Kamal"
+ARG MAINTAINER_EMAIL
+
+FROM golang:${GOLANG_VERSION:-1}-alpine as builder
+MAINTAINER $MAINTAINER_NAME <${MAINTAINER_EMAIL}>
+
+WORKDIR /go/src/{{PKG_NAMESPACE}}
+
+COPY . .
+
+RUN set -eux;                                \
+    export GO111MODULE=on                    \
+    ;                                        \
+    apk add --no-cache --virtual .build-deps \
+        bash                                 \
+        ca-certificates                      \
+        git                                  \
+        make                                 \
+    ;                                        \
+    make get-deps                            \
+        build SUDO= ARCH={{ARCH}}            \
+        ARTIFACTS_PATH={{ARTIFACTS_PATH}}    \
+        BINARY_PREFIX={{BINARY_PREFIX}}      \
+    ;                                        \
+    apk del .build-deps;
+
+# Production
+FROM {{BASE_IMAGE}} as production
+
+WORKDIR /app
+
+RUN set -eux;                   \
+    apk add                     \
+        curl                    \
+    ;                           \
+    chown -R nobody:nobody /app \
+    ;
+
+USER nobody
+
+# Copying the artifact generated from the previous step "builder".
+COPY --from=builder {{BINARY_PATH}}/{{BINARY_PREFIX}}-* /app/{{BINARY_PREFIX}}
+
+ENTRYPOINT ./{{BINARY_PREFIX}}                                \
+           -forward $SERVER_CONTAINER_NAME":"$FORWARDING_PORT \
+           -listen ":"$LISTENING_PORT                         \
+           -health ":"$HEALTH_PORT                            \
+           -http ":"$HTTP_PORT                                \
+           -recovery-path $RECOVERY_PATH
