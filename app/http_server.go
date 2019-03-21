@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
 	"net/http"
 )
@@ -13,7 +12,6 @@ type (
 		config    config.Configuration
 		routes    map[string]http.Handler
 		server    *http.Server
-		analyzer  *analysis.Analyzer
 		errorChan chan error
 	}
 )

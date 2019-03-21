@@ -14,8 +14,13 @@
 .glide/
 
 .idea/
+.bin/
+.tests/
+.data/
+.docker*
+!.dockerignore
+pkg/version/version.go
+.env
 *.iml
-coverage/
-bin/foo*
-data/
 *.log
+.go

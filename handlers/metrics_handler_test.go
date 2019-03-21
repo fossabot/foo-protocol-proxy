@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"github.com/ahmedkamals/foo-protocol-proxy/analysis"
 	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
+	"github.com/stretchr/testify/assert"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -18,18 +21,20 @@ func TestShouldHandleMetricsRoutesCorrectly(t *testing.T) {
 		t.Error(err)
 	}
 
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", log.Ldate)
 	testCases := []testingutil.TestCase{
 		{
 			ID: "Metrics route",
 			Input: map[string]http.Handler{
-				"/metrics": NewMetricsHandler(analyzer),
+				"/metrics": NewMetricsHandler(analyzer, logger),
 			},
 			Expected: expected,
 		},
 		{
 			ID: "Stats route",
 			Input: map[string]http.Handler{
-				"/stats": NewMetricsHandler(analyzer),
+				"/stats": NewMetricsHandler(analyzer, logger),
 			},
 			Expected: expected,
 		},
@@ -57,9 +62,7 @@ func TestShouldHandleMetricsRoutesCorrectly(t *testing.T) {
 				t.Errorf("Unexpectd header %s", w.Header().Get("Content-Type"))
 			}
 
-			if expected != strings.TrimSpace(w.Body.String()) {
-				t.Error(testCase.Format(w.Body.String()))
-			}
+			assert.Equal(t, expected, strings.TrimSpace(w.Body.String()))
 		}
 	}
 }

@@ -1,6 +1,9 @@
-.git
+.git/
 *.md
 LICENSE
+NOTICE
+MAINTAINERS
+.mailmap
 
 # Binaries for programs and plugins
 *.exe
@@ -18,8 +21,11 @@ LICENSE
 .glide/
 
 .idea/
+.tests/
+.bin/
+.data/
+.env
+.docker*
 *.iml
-coverage/
-bin/
-data/
 *.log
+.github/

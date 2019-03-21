@@ -1,19 +1,23 @@
 package app
 
 import (
+	"bytes"
 	"errors"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
 	"github.com/ahmedkamals/foo-protocol-proxy/handlers"
 	"github.com/ahmedkamals/foo-protocol-proxy/testingutil"
+	"github.com/stretchr/testify/assert"
+	"log"
 	"net/http"
-	"reflect"
 	"testing"
 )
 
 func TestShouldConfigureRoutesCorrectly(t *testing.T) {
 	t.Parallel()
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", log.Ldate)
 	routes := map[string]http.Handler{
-		"/health": handlers.NewHealthHandler(),
+		"/health": handlers.NewHealthHandler(logger),
 	}
 	server := getServer(config.Configuration{}, routes)
 	mux := http.NewServeMux()
@@ -43,25 +47,23 @@ func TestShouldConfigureRoutesCorrectly(t *testing.T) {
 
 		if testCase.ExpectsError {
 			expected := testCase.Expected.(error)
+			assert.Error(t, expected, err)
 
-			if err.Error() != expected.Error() {
-				t.Error(testCase.Format(actual))
-			}
 			continue
 		}
 
 		expected := testCase.Expected.(*http.ServeMux)
 
-		if !reflect.DeepEqual(expected, actual) {
-			t.Error(testCase.Format(actual))
-		}
+		assert.Equal(t, expected, actual)
 	}
 }
 
 func TestShouldGetServerRoutesCorrectly(t *testing.T) {
 	t.Parallel()
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", log.Ldate)
 	routes := map[string]http.Handler{
-		"/health": handlers.NewHealthHandler(),
+		"/health": handlers.NewHealthHandler(logger),
 	}
 	server := getServer(config.Configuration{}, routes)
 
@@ -78,9 +80,7 @@ func TestShouldGetServerRoutesCorrectly(t *testing.T) {
 		expected := testCase.Expected.(map[string]http.Handler)
 		actual := input.getRoutes()
 
-		if !reflect.DeepEqual(expected, actual) {
-			t.Error(testCase.Format(actual))
-		}
+		assert.Equal(t, actual, expected)
 	}
 }
 

@@ -5,8 +5,8 @@ import (
 	"github.com/ahmedkamals/foo-protocol-proxy/communication"
 	"github.com/ahmedkamals/foo-protocol-proxy/config"
 	"github.com/ahmedkamals/foo-protocol-proxy/persistence"
+	"github.com/kpango/glg"
 	"io"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -26,7 +26,8 @@ type (
 		errorChan      chan error
 		milliTicker    *time.Ticker
 		oneSecTicker   *time.Ticker
-		saver          *persistence.Saver
+		saver          persistence.Saver
+		logger         *glg.Glg
 	}
 )
 
@@ -34,7 +35,8 @@ type (
 func NewProxy(
 	config config.Configuration,
 	analyzer *analysis.Analyzer,
-	saver *persistence.Saver,
+	saver persistence.Saver,
+	logger *glg.Glg,
 	errorChan chan error,
 ) *Proxy {
 	return &Proxy{
@@ -46,6 +48,7 @@ func NewProxy(
 		milliTicker:    time.NewTicker(time.Millisecond),
 		oneSecTicker:   time.NewTicker(time.Second),
 		saver:          saver,
+		logger:         logger,
 	}
 }
 
@@ -61,7 +64,7 @@ func (p *Proxy) Start() error {
 
 	listener := communication.NewListener(lis, p.errorChan)
 
-	log.Printf("Forwarding from %s to %s", listener.Addr(), p.config.Forwarding)
+	p.logger.Infof("Forwarding from %s to %s", listener.Addr(), p.config.Forwarding)
 
 	go listener.AwaitForConnections(p.clientConnChan)
 	go p.handleClientConnections(p.clientConnChan)
@@ -75,16 +78,25 @@ func (p *Proxy) Start() error {
 	return nil
 }
 
+func (p *Proxy) reportError(err error) {
+	p.errorChan <- err
+}
+
 func (p *Proxy) recoverData() {
 	data, err := p.saver.Read()
 
 	if err != nil {
-		p.errorChan <- err
+		p.reportError(err)
 		return
 	}
 
 	recovery := persistence.NewEmptyRecovery()
-	recovery.Unmarshal(data)
+	err = recovery.Unmarshal(data)
+
+	if err != nil {
+		p.reportError(err)
+		return
+	}
 
 	mutex := sync.Mutex{}
 	mutex.Lock()
@@ -97,7 +109,7 @@ func (p *Proxy) handleClientConnections(clientConnChan chan net.Conn) {
 		serverConn, err := p.forward()
 
 		if err != nil {
-			p.errorChan <- err
+			p.reportError(err)
 			os.Exit(1)
 		}
 
@@ -145,7 +157,7 @@ func (p *Proxy) persistData() {
 	data, err := r.Marshal()
 
 	if err != nil {
-		p.errorChan <- err
+		p.reportError(err)
 	}
 
 	p.saver.Save(data)
@@ -153,25 +165,26 @@ func (p *Proxy) persistData() {
 
 func (p *Proxy) reportStatus() {
 	for {
-		<-p.signalChan
-		report, err := p.analyzer.Report()
+		select {
+		case <-p.signalChan:
+			report, err := p.analyzer.Report()
 
-		if err != nil {
-			p.errorChan <- err
-			return
+			if err != nil {
+				p.reportError(err)
+				return
+			}
+
+			println(report)
+		default:
+			continue
 		}
-
-		println(report)
 	}
 }
 
 func (p *Proxy) monitorErrors() {
-	for {
-		select {
-		case err := <-p.errorChan:
-			if err != nil && err != io.EOF {
-				log.Println(err)
-			}
+	for err := range p.errorChan {
+		if err != nil && err != io.EOF {
+			p.logger.Error(err)
 		}
 	}
 }
