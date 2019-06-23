@@ -1,4 +1,5 @@
 Foo Protocol Proxy [![CircleCI](https://circleci.com/gh/ahmedkamals/foo-protocol-proxy.svg?style=svg)](https://circleci.com/gh/ahmedkamals/foo-protocol-proxy "Build Status")
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fahmedkamals%2Ffoo-protocol-proxy.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fahmedkamals%2Ffoo-protocol-proxy?ref=badge_shield)
 ==================
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](LICENSE  "License")
@@ -242,3 +243,7 @@ Enjoy!
 [18]: http://localhost:8088/health "Health"
 [19]: http://localhost:8088/heartbeat "Heartbeat"
 [20]: http://localhost:8088/status "Status"
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fahmedkamals%2Ffoo-protocol-proxy.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fahmedkamals%2Ffoo-protocol-proxy?ref=badge_large)
